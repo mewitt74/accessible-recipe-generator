@@ -55,137 +55,160 @@ class IngredientPhotoCache {
 const photoCache = new IngredientPhotoCache();
 
 /**
- * Generate search query for ingredient photo
- */
-function generateIngredientSearchQuery(ingredientName: string): string {
-  // Clean up the ingredient name
-  let clean = ingredientName.toLowerCase()
-    .replace(/\(.*?\)/g, '') // Remove parentheses
-    .replace(/[^\w\s]/g, ' ') // Remove punctuation
-    .trim();
-
-  // Map common ingredient variations to better search terms
-  const ingredientMap: { [key: string]: string } = {
-    'egg yolks': 'egg yolk',
-    'egg whites': 'egg white',
-    'eggs': 'egg',
-    'garlic cloves': 'garlic',
-    'onion': 'whole onion',
-    'tomatoes': 'tomato',
-    'potatoes': 'potato',
-    'carrots': 'carrot',
-    'chicken breast': 'raw chicken breast',
-    'ground beef': 'raw ground beef',
-    'bacon': 'raw bacon strips',
-    'butter': 'butter stick',
-    'flour': 'flour bag',
-    'sugar': 'sugar white',
-    'salt': 'salt',
-    'pepper': 'black pepper',
-    'oil': 'cooking oil bottle',
-    'olive oil': 'olive oil bottle',
-    'milk': 'milk carton',
-    'cheese': 'cheese block',
-    'pasta': 'dry pasta',
-    'spaghetti': 'dry spaghetti',
-    'rice': 'white rice',
-    'bread': 'bread loaf',
-    'lettuce': 'lettuce head',
-    'spinach': 'fresh spinach',
-    'mushrooms': 'mushroom',
-    'bell pepper': 'bell pepper whole',
-    'lemon': 'whole lemon',
-    'lime': 'whole lime',
-    'parsley': 'fresh parsley',
-    'basil': 'fresh basil',
-    'thyme': 'fresh thyme',
-    'cilantro': 'fresh cilantro',
-  };
-
-  // Check if we have a mapped term
-  for (const [key, value] of Object.entries(ingredientMap)) {
-    if (clean.includes(key)) {
-      return value;
-    }
-  }
-
-  // Default: add "ingredient" or "food" for better results
-  return `${clean} ingredient`;
-}
-
-/**
- * Fetch ingredient photo from Unsplash
- */
-async function fetchUnsplashIngredientPhoto(query: string): Promise<string | null> {
-  try {
-    // Using Unsplash's public demo endpoint (no API key required for testing)
-    // For production, replace with your Unsplash API key
-    const url = `https://source.unsplash.com/400x300/?${encodeURIComponent(query)}`;
-    
-    // Test if the URL is accessible
-    const response = await fetch(url, { 
-      method: 'HEAD',
-      signal: AbortSignal.timeout(3000)
-    });
-    
-    if (response.ok) {
-      return url;
-    }
-    return null;
-  } catch (error) {
-    console.warn('Failed to fetch Unsplash photo:', error);
-    return null;
-  }
-}
-
-/**
- * Create fallback emoji representation for ingredient
+ * Create emoji representation for ingredient (cleaner than photos with watermarks)
  */
 function createFallbackIngredientPhoto(ingredientName: string): IngredientPhoto {
   const name = ingredientName.toLowerCase();
   
-  // Map ingredients to emojis
+  // Map ingredients to emojis - comprehensive list
   const emojiMap: { [key: string]: string } = {
+    // Proteins
     'egg': '🥚',
     'bacon': '🥓',
-    'spaghetti': '🍝',
-    'pasta': '🍝',
+    'chicken': '🍗',
+    'beef': '🥩',
+    'steak': '🥩',
+    'pork': '🥓',
+    'ham': '🍖',
+    'fish': '🐟',
+    'salmon': '🐟',
+    'tuna': '🐟',
+    'shrimp': '🦐',
+    'prawn': '🦐',
+    'crab': '🦀',
+    'lobster': '🦞',
+    'sausage': '🌭',
+    'turkey': '🦃',
+    
+    // Dairy
     'cheese': '🧀',
+    'cheddar': '🧀',
+    'mozzarella': '🧀',
+    'parmesan': '🧀',
+    'pecorino': '🧀',
     'milk': '🥛',
+    'cream': '🥛',
     'butter': '🧈',
+    'yogurt': '🥛',
+    
+    // Bread & Grains
     'bread': '🍞',
+    'toast': '🍞',
+    'rice': '🍚',
+    'pasta': '🍝',
+    'spaghetti': '🍝',
+    'noodle': '🍜',
+    'macaroni': '🍝',
+    'flour': '🌾',
+    'oat': '🌾',
+    'cereal': '🥣',
+    'bagel': '🥯',
+    'croissant': '🥐',
+    'pancake': '🥞',
+    'waffle': '🧇',
+    'tortilla': '🫓',
+    
+    // Vegetables
     'tomato': '🍅',
     'onion': '🧅',
     'garlic': '🧄',
     'potato': '🥔',
     'carrot': '🥕',
     'pepper': '🌶️',
+    'chili': '🌶️',
+    'chilli': '🌶️',
     'bell pepper': '🫑',
     'broccoli': '🥦',
     'mushroom': '🍄',
     'corn': '🌽',
     'cucumber': '🥒',
+    'pickle': '🥒',
     'lettuce': '🥬',
     'spinach': '🥬',
+    'kale': '🥬',
+    'cabbage': '🥬',
     'avocado': '🥑',
+    'eggplant': '🍆',
+    'aubergine': '🍆',
+    'pea': '🫛',
+    'bean': '🫘',
+    'ginger': '🫚',
+    'celery': '🥬',
+    
+    // Fruits
     'lemon': '🍋',
     'lime': '🍋',
     'orange': '🍊',
     'apple': '🍎',
     'banana': '🍌',
     'strawberry': '🍓',
-    'chicken': '🍗',
-    'beef': '🥩',
-    'pork': '🥓',
-    'fish': '🐟',
-    'shrimp': '🦐',
-    'rice': '🍚',
+    'blueberry': '🫐',
+    'grape': '🍇',
+    'watermelon': '🍉',
+    'melon': '🍈',
+    'peach': '🍑',
+    'pear': '🍐',
+    'cherry': '🍒',
+    'pineapple': '🍍',
+    'mango': '🥭',
+    'coconut': '🥥',
+    'kiwi': '🥝',
+    
+    // Seasonings & Condiments
     'salt': '🧂',
-    'oil': '🫗',
-    'water': '💧',
+    'pepper spice': '🧂',
     'sugar': '🍬',
-    'flour': '🌾',
-    'pecorino': '🧀',
+    'honey': '🍯',
+    'oil': '🫗',
+    'olive oil': '🫒',
+    'vinegar': '🫗',
+    'soy sauce': '🫗',
+    'ketchup': '🍅',
+    'mustard': '🟡',
+    'mayonnaise': '🥚',
+    'mayo': '🥚',
+    'hot sauce': '🌶️',
+    'herb': '🌿',
+    'basil': '🌿',
+    'parsley': '🌿',
+    'cilantro': '🌿',
+    'mint': '🌿',
+    'oregano': '🌿',
+    'thyme': '🌿',
+    'rosemary': '🌿',
+    
+    // Liquids
+    'water': '💧',
+    'stock': '🥣',
+    'broth': '🥣',
+    'soup': '🥣',
+    'juice': '🧃',
+    'wine': '🍷',
+    'beer': '🍺',
+    'coffee': '☕',
+    'tea': '🍵',
+    
+    // Other
+    'chocolate': '🍫',
+    'candy': '🍬',
+    'ice cream': '🍨',
+    'pizza': '🍕',
+    'burger': '🍔',
+    'sandwich': '🥪',
+    'taco': '🌮',
+    'burrito': '🌯',
+    'fry': '🍟',
+    'fries': '🍟',
+    'popcorn': '🍿',
+    'pretzel': '🥨',
+    'cookie': '🍪',
+    'cake': '🎂',
+    'pie': '🥧',
+    'cupcake': '🧁',
+    'donut': '🍩',
+    'nut': '🥜',
+    'peanut': '🥜',
+    'almond': '🥜',
   };
 
   let emoji = '🥘'; // Default food emoji
@@ -207,8 +230,9 @@ function createFallbackIngredientPhoto(ingredientName: string): IngredientPhoto 
 
 /**
  * Get photo for an ingredient
+ * Uses emoji icons for clean, simple display (no watermarks)
  * @param ingredientName - Name of the ingredient (e.g., "Spaghetti", "Egg Yolks")
- * @returns IngredientPhoto with URL (Unsplash) or emoji fallback
+ * @returns IngredientPhoto with emoji representation
  */
 export async function getIngredientPhoto(ingredientName: string): Promise<IngredientPhoto> {
   // Check cache first
@@ -217,24 +241,8 @@ export async function getIngredientPhoto(ingredientName: string): Promise<Ingred
     return cached;
   }
 
-  // Generate search query
-  const searchQuery = generateIngredientSearchQuery(ingredientName);
-
-  // Try to fetch from Unsplash
-  const unsplashUrl = await fetchUnsplashIngredientPhoto(searchQuery);
-
-  let photo: IngredientPhoto;
-
-  if (unsplashUrl) {
-    photo = {
-      url: unsplashUrl,
-      alt: ingredientName,
-      source: 'unsplash'
-    };
-  } else {
-    // Use emoji fallback
-    photo = createFallbackIngredientPhoto(ingredientName);
-  }
+  // Use emoji fallback for clean display (no watermarked photos)
+  const photo = createFallbackIngredientPhoto(ingredientName);
 
   // Cache the result
   photoCache.set(ingredientName, photo);
@@ -243,63 +251,7 @@ export async function getIngredientPhoto(ingredientName: string): Promise<Ingred
 }
 
 /**
- * Generate search query for equipment/tool photo
- */
-function generateEquipmentSearchQuery(equipmentName: string): string {
-  // Clean up the equipment name
-  let clean = equipmentName.toLowerCase()
-    .replace(/\(.*?\)/g, '') // Remove parentheses
-    .replace(/[^\w\s]/g, ' ') // Remove punctuation
-    .trim();
-
-  // Map common equipment variations to better search terms
-  const equipmentMap: { [key: string]: string } = {
-    'pot': 'cooking pot',
-    'pan': 'frying pan',
-    'saucepan': 'saucepan',
-    'skillet': 'skillet pan',
-    'bowl': 'mixing bowl',
-    'spoon': 'wooden spoon',
-    'spatula': 'kitchen spatula',
-    'whisk': 'wire whisk',
-    'knife': 'kitchen knife',
-    'cutting board': 'cutting board',
-    'grater': 'cheese grater',
-    'peeler': 'vegetable peeler',
-    'colander': 'colander strainer',
-    'strainer': 'kitchen strainer',
-    'measuring cup': 'measuring cups',
-    'measuring spoon': 'measuring spoons',
-    'mixer': 'electric mixer',
-    'blender': 'kitchen blender',
-    'oven': 'kitchen oven',
-    'stove': 'stove burner',
-    'microwave': 'microwave oven',
-    'baking sheet': 'baking sheet pan',
-    'baking dish': 'glass baking dish',
-    'casserole dish': 'casserole dish',
-    'tongs': 'kitchen tongs',
-    'ladle': 'soup ladle',
-    'timer': 'kitchen timer',
-    'thermometer': 'cooking thermometer',
-    'rolling pin': 'rolling pin',
-    'can opener': 'can opener',
-    'garlic press': 'garlic press',
-  };
-
-  // Check if we have a mapped term
-  for (const [key, value] of Object.entries(equipmentMap)) {
-    if (clean.includes(key)) {
-      return value;
-    }
-  }
-
-  // Default: add "kitchen" for better results
-  return `kitchen ${clean}`;
-}
-
-/**
- * Create fallback emoji representation for equipment
+ * Create emoji representation for equipment (cleaner than photos with watermarks)
  */
 function createFallbackEquipmentPhoto(equipmentName: string): EquipmentPhoto {
   const name = equipmentName.toLowerCase();
@@ -359,8 +311,9 @@ function createFallbackEquipmentPhoto(equipmentName: string): EquipmentPhoto {
 
 /**
  * Get photo for kitchen equipment/tool
+ * Uses emoji icons for clean, simple display (no watermarks)
  * @param equipmentName - Name of the equipment (e.g., "Large Pot", "Wooden Spoon")
- * @returns EquipmentPhoto with URL (Unsplash) or emoji fallback
+ * @returns EquipmentPhoto with emoji representation
  */
 export async function getEquipmentPhoto(equipmentName: string): Promise<EquipmentPhoto> {
   // Check cache first
@@ -369,24 +322,8 @@ export async function getEquipmentPhoto(equipmentName: string): Promise<Equipmen
     return cached;
   }
 
-  // Generate search query
-  const searchQuery = generateEquipmentSearchQuery(equipmentName);
-
-  // Try to fetch from Unsplash
-  const unsplashUrl = await fetchUnsplashIngredientPhoto(searchQuery);
-
-  let photo: EquipmentPhoto;
-
-  if (unsplashUrl) {
-    photo = {
-      url: unsplashUrl,
-      alt: equipmentName,
-      source: 'unsplash'
-    };
-  } else {
-    // Use emoji fallback
-    photo = createFallbackEquipmentPhoto(equipmentName);
-  }
+  // Use emoji fallback for clean display (no watermarked photos)
+  const photo = createFallbackEquipmentPhoto(equipmentName);
 
   // Cache the result
   photoCache.set(equipmentName, photo);
