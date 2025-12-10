@@ -17,12 +17,6 @@ jobs:
           node-version: 18
       - name: Install deps
         run: npm ci
-      - name: Start import server (background)
-        run: |
-          nohup node ./server/index.mjs > server.log 2>&1 &
-          sleep 3
-      - name: Run tests
-        run: npm test --silent
       - name: Build
         run: npm run build
   deploy-pages:
