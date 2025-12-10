@@ -21,6 +21,8 @@ function RecipeImporter({ onImport }: Props) {
   const [imageFoodMatches, setImageFoodMatches] = useState<string[]>([]);
   const [adFreeResults, setAdFreeResults] = useState<{ source: string; results: { url: string; title: string }[] }[]>([]);
   const [loadingAdFreeUrl, setLoadingAdFreeUrl] = useState<string | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [showCategories, setShowCategories] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +97,94 @@ function RecipeImporter({ onImport }: Props) {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      setError('Voice input is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setError(null);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setSearchQuery(transcript);
+      setIsListening(false);
+      // Automatically search after voice input
+      setTimeout(() => {
+        handleSearch();
+      }, 500);
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      setError('Could not understand. Please try again or type instead.');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const handleCategoryClick = (_category: string, searchTerm: string) => {
+    setShowCategories(false);
+    setSearchQuery(searchTerm);
+    setTimeout(() => {
+      handleSearch();
+    }, 100);
+  };
+
+  const handleDontKnow = () => {
+    const hour = new Date().getHours();
+    let suggestions: Array<{title: string, search: string}> = [];
+    
+    if (hour >= 5 && hour < 11) {
+      // Breakfast time
+      suggestions = [
+        {title: '🍳 Scrambled Eggs', search: 'scrambled eggs'},
+        {title: '🍞 Toast with Butter', search: 'toast'},
+        {title: '🥣 Cereal', search: 'cereal'}
+      ];
+    } else if (hour >= 11 && hour < 16) {
+      // Lunch time
+      suggestions = [
+        {title: '🥪 Grilled Cheese', search: 'grilled cheese'},
+        {title: '🍝 Pasta', search: 'pasta'},
+        {title: '🍲 Soup', search: 'soup'}
+      ];
+    } else {
+      // Dinner time
+      suggestions = [
+        {title: '🍗 Chicken', search: 'chicken'},
+        {title: '🍝 Spaghetti', search: 'spaghetti'},
+        {title: '🥘 Stir Fry', search: 'stir fry'}
+      ];
+    }
+
+    // Show suggestions
+    setShowCategories(false);
+    setError(null);
+    setSearchResults([]);
+    
+    // Create a visual selection UI
+    const mealTime = hour >= 5 && hour < 11 ? 'Breakfast' : hour >= 11 && hour < 16 ? 'Lunch' : 'Dinner';
+    setError(`${mealTime} Time! Pick one: ${suggestions.map(s => s.title).join(' | ')}`);
+    
+    // Auto-suggest first option
+    setSearchQuery(suggestions[0].search);
   };
 
   const handleSearch = async () => {
@@ -176,28 +266,77 @@ function RecipeImporter({ onImport }: Props) {
     <div className="recipe-importer">
       <h2>Search for a Recipe</h2>
       <p className="importer-description">
-        ✨ Start with an easy recipe below, OR type to search for more options
+        ✨ Choose a category, speak what you want, or pick an easy recipe below
       </p>
+
+      {/* I Don't Know What to Make Button */}
+      <div className="dont-know-section">
+        <button onClick={handleDontKnow} className="btn-dont-know">
+          🤔 I Don't Know What to Make
+        </button>
+      </div>
+      
+      {showCategories && (
+        <div className="category-cards">
+          <h3 className="category-title">What Type of Food?</h3>
+          <div className="category-grid">
+            <button onClick={() => handleCategoryClick('breakfast', 'eggs')} className="category-card">
+              <div className="category-icon">🍳</div>
+              <div className="category-name">Breakfast</div>
+              <div className="category-examples">Eggs • Toast • Cereal</div>
+            </button>
+            <button onClick={() => handleCategoryClick('lunch', 'sandwich')} className="category-card">
+              <div className="category-icon">🥪</div>
+              <div className="category-name">Lunch</div>
+              <div className="category-examples">Sandwich • Soup</div>
+            </button>
+            <button onClick={() => handleCategoryClick('dinner', 'chicken')} className="category-card">
+              <div className="category-icon">🍝</div>
+              <div className="category-name">Dinner</div>
+              <div className="category-examples">Pasta • Chicken</div>
+            </button>
+            <button onClick={() => handleCategoryClick('drinks', 'tea')} className="category-card">
+              <div className="category-icon">🍵</div>
+              <div className="category-name">Drinks</div>
+              <div className="category-examples">Tea • Coffee</div>
+            </button>
+            <button onClick={() => handleCategoryClick('snacks', 'toast')} className="category-card">
+              <div className="category-icon">🍪</div>
+              <div className="category-name">Snacks</div>
+              <div className="category-examples">Toast • Simple foods</div>
+            </button>
+            <button onClick={() => setShowCategories(false)} className="category-card category-card-skip">
+              <div className="category-icon">🔍</div>
+              <div className="category-name">Search Myself</div>
+              <div className="category-examples">Type or speak</div>
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* Basic Recipes - Quick Access */}
-      <div className="basic-recipes-quick-access">
-        <h3>🍳 Quick Start - Basic Recipes:</h3>
-        <div className="basic-recipe-buttons">
-          {basicRecipeTitles.map((title) => (
-            <button
-              key={title}
-              onClick={() => handleBasicRecipeClick(title)}
-              className="basic-recipe-btn"
-            >
-              {title}
-            </button>
-          ))}
+      {!showCategories && (
+      <>
+        <div className="basic-recipes-quick-access">
+          <h3>🍳 Quick Start - Basic Recipes:</h3>
+          <div className="basic-recipe-buttons">
+            {basicRecipeTitles.map((title) => (
+              <button
+                key={title}
+                onClick={() => handleBasicRecipeClick(title)}
+                className="basic-recipe-btn"
+              >
+                {title}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="or-divider">
-        <span>OR</span>
-      </div>
+        <div className="or-divider">
+          <span>OR</span>
+        </div>
+      </>
+      )}
       
       {/* Image Upload Section */}
       <div className="image-upload-section">
@@ -270,6 +409,14 @@ function RecipeImporter({ onImport }: Props) {
           placeholder={showManualInput ? "What food do you see?" : "Type food name (chicken, pasta, soup)"}
           className="search-input"
         />
+        <button
+          onClick={handleVoiceInput}
+          disabled={loading || imageProcessing || isListening}
+          className="btn-voice"
+          title="Speak what you want to make"
+        >
+          {isListening ? '🎤 Listening...' : '🎤 Speak'}
+        </button>
         <button
           onClick={handleSearch}
           disabled={loading || imageProcessing}

@@ -20,6 +20,97 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 .recipe-importer h2{font-size:28px;margin:0 0 8px 0;color:#333333}
 .importer-description{font-size:18px;color:#666;margin-bottom:24px}
 
+/* I Don't Know What to Make Section */
+.dont-know-section{
+  text-align:center;
+  margin-bottom:32px;
+}
+.btn-dont-know{
+  padding:24px 48px;
+  background:#ff9800;
+  color:#ffffff;
+  font-size:28px;
+  font-weight:bold;
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  transition:all 0.3s;
+  box-shadow:0 4px 12px rgba(255,152,0,0.3);
+  animation:pulse 2s ease-in-out infinite;
+}
+.btn-dont-know:hover{
+  background:#f57c00;
+  transform:scale(1.05);
+  box-shadow:0 6px 16px rgba(255,152,0,0.4);
+}
+.btn-dont-know:active{
+  transform:scale(0.98);
+}
+@keyframes pulse{
+  0%, 100%{box-shadow:0 4px 12px rgba(255,152,0,0.3)}
+  50%{box-shadow:0 6px 20px rgba(255,152,0,0.5)}
+}
+
+/* Category Cards */
+.category-cards{
+  margin-bottom:32px;
+  padding:24px;
+  background:#f9f9f9;
+  border-radius:12px;
+}
+.category-title{
+  font-size:28px;
+  color:#333;
+  margin:0 0 20px 0;
+  text-align:center;
+  font-weight:bold;
+}
+.category-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
+  gap:16px;
+}
+.category-card{
+  background:#ffffff;
+  border:3px solid #7fb539;
+  border-radius:12px;
+  padding:24px 16px;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+}
+.category-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 6px 16px rgba(127,181,57,0.3);
+  border-color:#6fa030;
+}
+.category-card:active{
+  transform:scale(0.98);
+}
+.category-card-skip{
+  border-color:#666;
+}
+.category-card-skip:hover{
+  border-color:#333;
+  box-shadow:0 6px 16px rgba(0,0,0,0.2);
+}
+.category-icon{
+  font-size:64px;
+  margin-bottom:12px;
+}
+.category-name{
+  font-size:22px;
+  font-weight:bold;
+  color:#333;
+  margin-bottom:8px;
+}
+.category-examples{
+  font-size:14px;
+  color:#666;
+  line-height:1.4;
+}
+
 /* Basic Recipes Quick Access */
 .basic-recipes-quick-access{
   background:#f0f5ea;
@@ -213,6 +304,25 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 .importer-input-group{display:flex;gap:8px;margin-bottom:16px}
 .search-input{flex:1;padding:12px;font-size:18px;border:2px solid #ccc;border-radius:6px}
 .search-input:focus{outline:none;border-color:#7fb539}
+.btn-voice{
+  padding:12px 20px;
+  background:#4caf50;
+  color:#ffffff;
+  font-size:18px;
+  font-weight:bold;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  transition:background 0.2s;
+  white-space:nowrap;
+}
+.btn-voice:hover{
+  background:#45a049;
+}
+.btn-voice:disabled{
+  opacity:0.6;
+  cursor:not-allowed;
+}
 .btn-primary:disabled{opacity:0.6;cursor:not-allowed}
 .error-message{background:#fee;border:2px solid #c33;color:#c33;padding:12px;border-radius:6px;margin-bottom:16px;font-size:18px}
 .search-results{margin-top:24px}
@@ -785,6 +895,84 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
+}
+
+/* ============= PROGRESS TRACKER ============= */
+.progress-tracker {
+  background: #f0f5ea;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  border: 3px solid #7fb539;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 12px;
+  background: #e0e0e0;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #7fb539 0%, #6fa030 100%);
+  transition: width 0.5s ease-in-out;
+  border-radius: 6px;
+}
+
+.progress-circles {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.progress-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.progress-circle.completed {
+  background: #7fb539;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(127, 181, 57, 0.4);
+}
+
+.progress-circle.current {
+  background: #ff9800;
+  color: #ffffff;
+  border: 3px solid #f57c00;
+  animation: currentPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.5);
+}
+
+.progress-circle.upcoming {
+  background: #e0e0e0;
+  color: #666;
+}
+
+@keyframes currentPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin-top: 8px;
 }
 
 /* ============= NAVIGATION CONTROLS ============= */
@@ -1744,6 +1932,63 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     font-size: 20px;
   }
   
+  /* Category cards */
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .category-icon {
+    font-size: 48px;
+  }
+  
+  .category-name {
+    font-size: 18px;
+  }
+  
+  .category-examples {
+    font-size: 12px;
+  }
+  
+  .btn-dont-know {
+    padding: 20px 32px;
+    font-size: 22px;
+  }
+  
+  /* Voice button */
+  .btn-voice {
+    padding: 10px 16px;
+    font-size: 16px;
+  }
+  
+  .importer-input-group {
+    flex-direction: column;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .btn-voice,
+  .btn-primary {
+    width: 100%;
+  }
+  
+  /* Progress tracker */
+  .progress-circles {
+    gap: 6px;
+  }
+  
+  .progress-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  
+  .progress-text {
+    font-size: 18px;
+  }
+  
   .ingredient-check-item,
   .equipment-check-item {
     flex-direction: column;
@@ -1885,5 +2130,36 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   .btn-huge {
     font-size: 20px !important;
     min-height: 50px;
+  }
+  
+  .category-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .category-icon {
+    font-size: 40px;
+  }
+  
+  .category-name {
+    font-size: 18px;
+  }
+  
+  .btn-dont-know {
+    padding: 16px 24px;
+    font-size: 20px;
+  }
+  
+  .progress-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+  
+  .progress-text {
+    font-size: 16px;
+  }
+  
+  .category-title {
+    font-size: 22px;
   }
 }

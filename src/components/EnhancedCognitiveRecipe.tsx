@@ -352,10 +352,41 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
 
   // Cooking steps screen
   const currentPhoto = stepPhotos.get(currentStepIndex);
+  const progressPercent = Math.round(((currentStepIndex + 1) / allSteps.length) * 100);
+  const stepsRemaining = allSteps.length - currentStepIndex - 1;
 
   return (
     <div className="cognitive-accessible-recipe">
       <div className="cooking-step-screen">
+        {/* Progress Tracker */}
+        <div className="progress-tracker">
+          <div className="progress-bar-container">
+            <div className="progress-bar" style={{ width: `${progressPercent}%` }}></div>
+          </div>
+          <div className="progress-circles">
+            {allSteps.map((_, index) => (
+              <div 
+                key={index} 
+                className={`progress-circle ${
+                  index < currentStepIndex ? 'completed' : 
+                  index === currentStepIndex ? 'current' : 
+                  'upcoming'
+                }`}
+              >
+                {index < currentStepIndex ? '✓' : index + 1}
+              </div>
+            ))}
+          </div>
+          <div className="progress-text">
+            {stepsRemaining === 0 
+              ? '🎉 Last step! Almost done!' 
+              : currentStepIndex === 0 
+              ? `${allSteps.length} steps total. Let's start!`
+              : `${stepsRemaining} more ${stepsRemaining === 1 ? 'step' : 'steps'} to go!`
+            }
+          </div>
+        </div>
+
         {/* Step counter */}
         <div className="step-counter">
           Step {currentStepIndex + 1} of {allSteps.length}
