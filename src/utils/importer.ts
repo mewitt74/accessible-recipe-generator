@@ -1,4 +1,4 @@
-import cheerio from 'cheerio';
+import { load as cheerioLoad } from 'cheerio';
 import type { Recipe } from '../types';
 
 async function fetchHtml(url: string): Promise<string> {
@@ -13,7 +13,7 @@ export async function parseRecipeFromUrl(url: string): Promise<Recipe> {
 }
 
 export function parseRecipeFromHtml(url: string, html: string): Recipe {
-  const $ = cheerio.load(html);
+  const $ = cheerioLoad(html);
   const hostname = new URL(url).hostname.replace('www.', '');
 
   // Title heuristics
@@ -34,7 +34,7 @@ export function parseRecipeFromHtml(url: string, html: string): Recipe {
   for (const sel of ingredientSelectors) {
     const nodes = $(sel);
     if (nodes && nodes.length > 0) {
-      nodes.each((_, el) => {
+      nodes.each((_idx: number, el: any) => {
         const txt = $(el).text().trim();
         if (txt) {
           ingredients.push({ name: txt });
@@ -55,14 +55,15 @@ export function parseRecipeFromHtml(url: string, html: string): Recipe {
     '.method li',
   ];
 
-  let steps: { section: string; shortTitle: string; instruction: string }[] = [];
+  type StepData = { section: 'Prep' | 'Cook Main' | 'Cook Side' | 'Make Sauce' | 'Finish & Serve'; shortTitle: string; instruction: string };
+  let steps: StepData[] = [];
   for (const sel of stepSelectors) {
     const nodes = $(sel);
     if (nodes && nodes.length > 0) {
-      nodes.each((i, el) => {
+      nodes.each((_idx: number, el: any) => {
         const txt = $(el).text().trim();
         if (txt) {
-          steps.push({ section: 'Main', shortTitle: '', instruction: txt });
+          steps.push({ section: 'Prep', shortTitle: '', instruction: txt });
         }
       });
       break;
@@ -72,9 +73,11 @@ export function parseRecipeFromHtml(url: string, html: string): Recipe {
   // Fallback: try to collect paragraphs under article
   if (steps.length === 0) {
     const paras = $('article p');
-    paras.each((i, el) => {
+    paras.each((_idx: number, el: any) => {
       const txt = $(el).text().trim();
-      if (txt && steps.length < 20) steps.push({ section: 'Main', shortTitle: '', instruction: txt });
+      if (txt && steps.length < 20) {
+        steps.push({ section: 'Prep', shortTitle: '', instruction: txt });
+      }
     });
   }
 
@@ -91,13 +94,13 @@ export function parseRecipeFromHtml(url: string, html: string): Recipe {
 
   // Equipment and tips heuristics
   const equipment: string[] = [];
-  $('[class*="equipment"]').find('li').each((_, el) => {
+  $('[class*="equipment"]').find('li').each((_idx: number, el: any) => {
     const t = $(el).text().trim();
     if (t) equipment.push(t);
   });
 
   const tips: string[] = [];
-  $('[class*="tips"]').find('li,p').each((_, el) => {
+  $('[class*="tips"]').find('li,p').each((_idx: number, el: any) => {
     const t = $(el).text().trim();
     if (t) tips.push(t);
   });
@@ -110,7 +113,7 @@ export function parseRecipeFromHtml(url: string, html: string): Recipe {
     cookTimeMinutes: cookTimeMinutes ?? 0,
     ingredients: ingredients.map(i => ({ amount: i.amount ?? '', name: i.name, note: i.note })),
     equipment,
-    steps: steps.length > 0 ? steps : [{ section: 'Main', shortTitle: '', instruction: 'See original recipe.' }],
+    steps: steps.length > 0 ? steps : [{ section: 'Prep', shortTitle: '', instruction: 'See original recipe.' }],
     tips,
   };
 
