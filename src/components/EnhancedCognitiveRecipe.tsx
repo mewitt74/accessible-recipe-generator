@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { Recipe } from '../types';
 import { getCookingStepPhoto, type StepPhoto } from '../services/stepPhotos';
 import { getIngredientPhoto, getEquipmentPhoto, type IngredientPhoto, type EquipmentPhoto } from '../services/ingredientPhotos';
+import { getBasicRecipeStepPhoto, getBasicRecipeIngredientPhoto, getBasicRecipeEquipmentPhoto } from '../services/recipePhotos';
 
 interface Props {
   recipe: Recipe;
@@ -49,6 +50,16 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
       for (let i = 0; i < recipe.ingredients.length; i++) {
         const ing = recipe.ingredients[i];
         try {
+          // Try pre-defined photos first for basic recipes
+          if (recipe.id) {
+            const predefinedPhoto = getBasicRecipeIngredientPhoto(recipe.id, ing.name);
+            if (predefinedPhoto) {
+              newPhotos.set(i, { source: 'unsplash', url: predefinedPhoto, alt: ing.name });
+              continue;
+            }
+          }
+          
+          // Fall back to dynamic photo search
           const photo = await getIngredientPhoto(ing.name);
           newPhotos.set(i, photo);
         } catch (error) {
@@ -62,7 +73,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
     if (showIngredients) {
       loadIngredientPhotos();
     }
-  }, [recipe.ingredients, showIngredients]);
+  }, [recipe.ingredients, recipe.id, showIngredients]);
 
   // Load equipment photos
   useEffect(() => {
@@ -74,6 +85,16 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
       for (let i = 0; i < recipe.equipment.length; i++) {
         const eq = recipe.equipment[i];
         try {
+          // Try pre-defined photos first for basic recipes
+          if (recipe.id) {
+            const predefinedPhoto = getBasicRecipeEquipmentPhoto(recipe.id, eq);
+            if (predefinedPhoto) {
+              newPhotos.set(i, { source: 'unsplash', url: predefinedPhoto, alt: eq });
+              continue;
+            }
+          }
+          
+          // Fall back to dynamic photo search
           const photo = await getEquipmentPhoto(eq);
           newPhotos.set(i, photo);
         } catch (error) {
@@ -87,7 +108,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
     if (showIngredients) {
       loadEquipmentPhotos();
     }
-  }, [recipe.equipment, showIngredients]);
+  }, [recipe.equipment, recipe.id, showIngredients]);
 
   // Load photo for current step
   useEffect(() => {
@@ -95,6 +116,21 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
       if (!stepPhotos.has(currentStepIndex)) {
         setLoadingPhoto(true);
         try {
+          // Try pre-defined photos first for basic recipes
+          if (recipe.id && currentStep.stepNumber) {
+            const predefinedPhoto = getBasicRecipeStepPhoto(recipe.id, currentStep.stepNumber);
+            if (predefinedPhoto) {
+              setStepPhotos(prev => new Map(prev).set(currentStepIndex, {
+                source: 'unsplash',
+                url: predefinedPhoto,
+                alt: currentStep.instruction
+              }));
+              setLoadingPhoto(false);
+              return;
+            }
+          }
+          
+          // Fall back to dynamic photo search
           const photo = await getCookingStepPhoto(
             currentStep.instruction,
             recipe.title
@@ -113,7 +149,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
     if (!showIngredients && currentStep) {
       loadPhoto();
     }
-  }, [currentStepIndex, showIngredients, currentStep, recipe.title, stepPhotos]);
+  }, [currentStepIndex, showIngredients, currentStep, recipe.title, recipe.id, stepPhotos]);
 
   // Auto-speak step when it loads
   useEffect(() => {
@@ -471,25 +507,25 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
           )}
         </div>
 
-        {/* Navigation */}
-        <div className="step-controls">
+        {/* Navigation - NEXT button prominent */}
+        {!isLastStep && (
+          <button
+            onClick={handleNextStep}
+            className="btn-huge btn-next-prominent"
+            aria-label="Next step"
+          >
+            NEXT STEP →
+          </button>
+        )}
+        
+        <div className="step-controls-secondary">
           {!isFirstStep && (
             <button
               onClick={handlePreviousStep}
-              className="btn-step btn-prev"
+              className="btn-back"
               aria-label="Previous step"
             >
-              ← Back
-            </button>
-          )}
-
-          {!isLastStep && (
-            <button
-              onClick={handleNextStep}
-              className="btn-step btn-next"
-              aria-label="Next step"
-            >
-              Next →
+              ← Go Back
             </button>
           )}
 

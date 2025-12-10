@@ -26,15 +26,42 @@ export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
   const isLastStep = currentStepIndex === allSteps.length - 1;
   const isFirstStep = currentStepIndex === 0;
 
-  // Text-to-speech function
+  // Text-to-speech function with natural female voice
   const speakInstruction = (text: string) => {
     if ('speechSynthesis' in window) {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel();
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9; // Slightly slower for clarity
-      utterance.pitch = 1;
+      
+      // Wait for voices to load
+      const setVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        // Find a natural female voice
+        const femaleVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && 
+          (voice.name.includes('Female') || 
+           voice.name.includes('Woman') ||
+           voice.name.includes('Samantha') ||
+           voice.name.includes('Victoria') ||
+           voice.name.includes('Karen') ||
+           voice.name.includes('Zira'))
+        ) || voices.find(voice => voice.lang.startsWith('en'));
+        
+        if (femaleVoice) {
+          utterance.voice = femaleVoice;
+        }
+      };
+      
+      // Try to set voice immediately, or wait for voices to load
+      if (window.speechSynthesis.getVoices().length > 0) {
+        setVoice();
+      } else {
+        window.speechSynthesis.onvoiceschanged = setVoice;
+      }
+      
+      utterance.rate = 0.85; // Slower and clearer for TBI patients
+      utterance.pitch = 1.1; // Slightly higher for natural female tone
       utterance.volume = 1;
 
       utterance.onstart = () => setIsSpeaking(true);
@@ -201,25 +228,25 @@ export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
           {isSpeaking ? '🔊 Listening...' : '🔊 Hear This'}
         </button>
 
-        {/* Navigation Controls */}
-        <div className="step-controls">
+        {/* Navigation Controls - NEXT button prominent */}
+        {!isLastStep && (
+          <button
+            onClick={handleNextStep}
+            className="btn-huge btn-next-prominent"
+            aria-label="Next step"
+          >
+            NEXT STEP →
+          </button>
+        )}
+        
+        <div className="step-controls-secondary">
           {!isFirstStep && (
             <button
               onClick={handlePreviousStep}
-              className="btn-step btn-prev"
+              className="btn-back"
               aria-label="Previous step"
             >
-              ← Back
-            </button>
-          )}
-
-          {!isLastStep && (
-            <button
-              onClick={handleNextStep}
-              className="btn-step btn-next"
-              aria-label="Next step"
-            >
-              Next →
+              ← Go Back
             </button>
           )}
 

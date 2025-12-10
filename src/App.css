@@ -845,22 +845,26 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  min-height: 300px;
-  background: #ffffff;
+  padding: 30px 25px;
+  min-height: 200px;
+  background: #fffef5;
   border-radius: 12px;
-  border: 3px solid #7fb539;
+  border: 4px solid #7fb539;
   margin: 20px 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .instruction-text {
-  font-size: 42px !important;
+  font-size: 38px !important;
   font-weight: 600 !important;
-  text-align: center;
-  color: #333333;
-  line-height: 1.4;
+  text-align: left !important;
+  color: #1a1a1a !important;
+  line-height: 1.5 !important;
   margin: 0 !important;
-  word-break: break-word;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 /* ============= VOICE BUTTON ============= */
@@ -975,7 +979,70 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   margin-top: 8px;
 }
 
-/* ============= NAVIGATION CONTROLS ============= */
+/* ============= COOKING SCREEN SCROLLING ============= */
+.cognitive-accessible-recipe {
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.cooking-step-screen {
+  padding: 20px;
+  padding-bottom: 40px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ============= PROMINENT NEXT BUTTON ============= */
+.btn-next-prominent {
+  width: 100% !important;
+  padding: 32px !important;
+  font-size: 42px !important;
+  font-weight: 900 !important;
+  background: linear-gradient(135deg, #7fb539 0%, #6fa030 100%) !important;
+  color: #ffffff !important;
+  border: 4px solid #5a8024 !important;
+  border-radius: 16px !important;
+  cursor: pointer;
+  transition: all 0.3s;
+  touch-action: manipulation;
+  margin: 20px 0 !important;
+  box-shadow: 0 8px 20px rgba(127, 181, 57, 0.4);
+  animation: nextButtonPulse 2s ease-in-out infinite;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.btn-next-prominent:hover {
+  background: linear-gradient(135deg, #6fa030 0%, #5a8024 100%) !important;
+  transform: scale(1.05);
+  box-shadow: 0 12px 30px rgba(127, 181, 57, 0.6);
+}
+
+.btn-next-prominent:active {
+  transform: scale(0.98);
+}
+
+@keyframes nextButtonPulse {
+  0%, 100% { 
+    box-shadow: 0 8px 20px rgba(127, 181, 57, 0.4);
+  }
+  50% { 
+    box-shadow: 0 12px 35px rgba(127, 181, 57, 0.7);
+    transform: translateY(-2px);
+  }
+}
+
+/* ============= SECONDARY CONTROLS ============= */
+.step-controls-secondary {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 10px 0 20px 0;
+}
+
+/* ============= NAVIGATION CONTROLS (OLD) ============= */
 .step-controls {
   display: flex;
   gap: 12px;
@@ -1989,6 +2056,28 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     font-size: 18px;
   }
   
+  /* Cooking mode - instruction text */
+  .instruction-text {
+    font-size: 28px !important;
+    line-height: 1.5 !important;
+  }
+  
+  .instruction-area {
+    padding: 20px;
+    min-height: 150px;
+  }
+  
+  /* Next button on mobile */
+  .btn-next-prominent {
+    font-size: 32px !important;
+    padding: 24px !important;
+  }
+  
+  .cooking-step-screen {
+    padding: 15px;
+    padding-bottom: 30px;
+  }
+  
   .ingredient-check-item,
   .equipment-check-item {
     flex-direction: column;
@@ -2161,5 +2250,19 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   
   .category-title {
     font-size: 22px;
+  }
+  
+  .instruction-text {
+    font-size: 24px !important;
+  }
+  
+  .btn-next-prominent {
+    font-size: 28px !important;
+    padding: 20px !important;
+  }
+  
+  .instruction-area {
+    padding: 15px;
+    min-height: 120px;
   }
 }
