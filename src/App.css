@@ -1650,3 +1650,240 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     print-color-adjust: exact;
   }
 }
+
+/* ============================================
+   RESPONSIVE DESIGN - MOBILE & TABLET
+   ============================================ */
+
+/* Large tablets and small desktops */
+@media (max-width: 1024px) {
+  .section-title {
+    font-size: 28px;
+  }
+  
+  .ingredient-check-amount,
+  .ingredient-check-name,
+  .equipment-check-name {
+    font-size: 24px;
+  }
+  
+  .ingredient-photo-container {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .ingredient-emoji {
+    font-size: 56px;
+  }
+}
+
+/* Tablets (portrait) */
+@media (max-width: 768px) {
+  .recipe-title {
+    font-size: 32px !important;
+  }
+  
+  .section-title {
+    font-size: 24px;
+  }
+  
+  .ingredient-check-item,
+  .equipment-check-item {
+    padding: 15px;
+    gap: 12px;
+    min-height: 110px;
+  }
+  
+  .ingredient-checkbox,
+  .equipment-checkbox {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .ingredient-photo-container {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .ingredient-emoji {
+    font-size: 48px;
+  }
+  
+  .ingredient-check-amount {
+    font-size: 20px;
+    min-width: 80px;
+  }
+  
+  .ingredient-check-name,
+  .equipment-check-name {
+    font-size: 20px;
+  }
+  
+  .ingredient-text {
+    gap: 8px;
+  }
+  
+  .basic-recipe-btn {
+    padding: 12px 18px;
+    font-size: 18px;
+  }
+  
+  .basic-recipes-quick-access h3 {
+    font-size: 20px;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  .recipe-title {
+    font-size: 24px !important;
+    line-height: 1.3;
+  }
+  
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .ingredient-check-item,
+  .equipment-check-item {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+    gap: 10px;
+    min-height: auto;
+  }
+  
+  .ingredient-check-label,
+  .equipment-check-label {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+  }
+  
+  .ingredient-checkbox,
+  .equipment-checkbox {
+    width: 28px;
+    height: 28px;
+    align-self: flex-start;
+    margin-top: 5px;
+  }
+  
+  .ingredient-photo-container {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .ingredient-emoji {
+    font-size: 36px;
+  }
+  
+  .ingredient-text {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    flex: 1;
+  }
+  
+  .ingredient-check-amount {
+    font-size: 18px;
+    font-weight: bold;
+    min-width: auto;
+  }
+  
+  .ingredient-check-name,
+  .equipment-check-name {
+    font-size: 18px;
+    word-break: break-word;
+  }
+  
+  .basic-recipes-quick-access {
+    padding: 16px;
+  }
+  
+  .basic-recipes-quick-access h3 {
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+  
+  .basic-recipe-btn {
+    padding: 10px 14px;
+    font-size: 16px;
+    width: 100%;
+  }
+  
+  .basic-recipe-buttons {
+    gap: 8px;
+  }
+  
+  /* Cognitive recipe viewer adjustments */
+  .instruction-text {
+    font-size: 32px !important;
+    line-height: 1.4;
+  }
+  
+  .btn-huge {
+    min-height: 60px;
+    font-size: 24px !important;
+    padding: 16px 24px;
+  }
+  
+  .btn-step {
+    font-size: 20px !important;
+    padding: 14px 20px;
+  }
+  
+  .step-counter {
+    font-size: 18px;
+  }
+  
+  .safety-alert {
+    font-size: 18px;
+    padding: 12px;
+  }
+  
+  .timer-controls button {
+    font-size: 18px;
+    padding: 10px 16px;
+  }
+  
+  .timer-display {
+    font-size: 36px;
+  }
+}
+
+/* Very small mobile phones */
+@media (max-width: 360px) {
+  .recipe-title {
+    font-size: 20px !important;
+  }
+  
+  .ingredient-check-amount,
+  .ingredient-check-name,
+  .equipment-check-name {
+    font-size: 16px;
+  }
+  
+  .ingredient-photo-container {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .ingredient-emoji {
+    font-size: 28px;
+  }
+  
+  .basic-recipe-btn {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .instruction-text {
+    font-size: 28px !important;
+  }
+  
+  .btn-huge {
+    font-size: 20px !important;
+    min-height: 50px;
+  }
+}
