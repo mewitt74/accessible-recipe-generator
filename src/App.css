@@ -1242,13 +1242,13 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 .ingredient-check-item,
 .equipment-check-item {
   display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 20px;
+  align-items: stretch;
+  gap: 16px;
+  padding: 16px;
   background: white;
   border-radius: 12px;
   border: 3px solid #7fb539;
-  min-height: 140px;
+  min-height: 120px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -1261,28 +1261,29 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 
 .ingredient-checkbox,
 .equipment-checkbox {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   accent-color: #7fb539;
   flex-shrink: 0;
+  margin-top: 4px;
 }
 
 .ingredient-check-label,
 .equipment-check-label {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 16px;
   cursor: pointer;
   flex: 1;
   font-size: 24px;
-  width: 100%;
+  min-width: 0;
 }
 
 /* Ingredient Photos */
 .ingredient-photo-container {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: 12px;
   overflow: hidden;
   background: #f9f9f9;
@@ -1302,7 +1303,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 }
 
 .ingredient-emoji {
-  font-size: 64px;
+  font-size: 52px;
   line-height: 1;
 }
 
@@ -1318,28 +1319,33 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 
 .ingredient-text {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  gap: 8px;
   flex: 1;
   min-width: 0;
-  flex-wrap: wrap;
+  max-width: 100%;
+  align-self: center;
+  overflow: hidden;
 }
 
 .ingredient-check-amount {
   font-weight: bold;
   color: #7fb539;
-  font-size: 28px;
-  min-width: 100px;
-  flex-shrink: 0;
+  font-size: 26px;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .ingredient-check-name,
 .equipment-check-name {
   color: #333333;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 500;
-  flex: 1;
-  word-wrap: break-word;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .equipment-check-label {
@@ -1950,15 +1956,15 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   
   .ingredient-check-item,
   .equipment-check-item {
-    padding: 15px;
+    padding: 14px;
     gap: 12px;
-    min-height: 110px;
+    min-height: 100px;
   }
   
   .ingredient-checkbox,
   .equipment-checkbox {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
   }
   
   .ingredient-photo-container {
@@ -1967,21 +1973,20 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
   
   .ingredient-emoji {
-    font-size: 48px;
+    font-size: 42px;
   }
   
   .ingredient-check-amount {
-    font-size: 20px;
-    min-width: 80px;
+    font-size: 22px;
   }
   
   .ingredient-check-name,
   .equipment-check-name {
-    font-size: 20px;
+    font-size: 22px;
   }
   
   .ingredient-text {
-    gap: 8px;
+    gap: 6px;
   }
   
   .basic-recipe-btn {
@@ -2107,18 +2112,13 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   
   .ingredient-check-item,
   .equipment-check-item {
-    flex-direction: column;
-    align-items: flex-start;
     padding: 12px;
     gap: 10px;
-    min-height: auto;
+    min-height: 90px;
   }
   
   .ingredient-check-label,
   .equipment-check-label {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
     gap: 10px;
   }
   
@@ -2126,36 +2126,30 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   .equipment-checkbox {
     width: 28px;
     height: 28px;
-    align-self: flex-start;
-    margin-top: 5px;
   }
   
   .ingredient-photo-container {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
   }
   
   .ingredient-emoji {
-    font-size: 36px;
+    font-size: 38px;
   }
   
   .ingredient-text {
-    flex-direction: column;
-    align-items: flex-start;
     gap: 4px;
     flex: 1;
   }
   
   .ingredient-check-amount {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: bold;
-    min-width: auto;
   }
   
   .ingredient-check-name,
   .equipment-check-name {
-    font-size: 18px;
-    word-break: break-word;
+    font-size: 20px;
   }
   
   .basic-recipes-quick-access {
