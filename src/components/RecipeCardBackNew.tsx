@@ -45,7 +45,7 @@ export default function RecipeCardBackNew({ recipe }: { recipe: Recipe }) {
             <div key={index} className="hf-step-card">
               {/* Step Number Badge */}
               <div className="hf-step-number-badge">
-                {index + 1} {step.section.toUpperCase()}
+                {index + 1} {step.section?.toUpperCase() || 'STEP'}
               </div>
 
               <div className="hf-step-content">

@@ -5,22 +5,28 @@ export interface Ingredient {
 }
 
 export interface Step {
-  section: 'Prep' | 'Cook Main' | 'Cook Side' | 'Make Sauce' | 'Finish & Serve';
-  shortTitle: string;
+  stepNumber?: number;
+  section?: 'Prep' | 'Cook Main' | 'Cook Side' | 'Make Sauce' | 'Finish & Serve';
+  shortTitle?: string;
   instruction: string;
 }
 
 export interface Recipe {
+  id?: string;
   title: string;
   subtitle?: string;
+  description?: string;
   servings: number;
   prepTimeMinutes: number;
   cookTimeMinutes: number;
+  difficulty?: string;
   calories?: number;
   ingredients: Ingredient[];
   equipment: string[];
   steps: Step[];
   tips?: string[];
+  tags?: string[];
+  categories?: string[];
 }
 
 // Validation constraints from requirements

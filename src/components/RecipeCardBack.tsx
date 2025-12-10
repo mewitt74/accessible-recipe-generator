@@ -4,10 +4,11 @@ export default function RecipeCardBack({ recipe }: { recipe: Recipe }) {
   // Group steps by section
   const stepsBySection: Record<string, Step[]> = {};
   recipe.steps.forEach(step => {
-    if (!stepsBySection[step.section]) {
-      stepsBySection[step.section] = [];
+    const section = step.section || 'Cook Main';
+    if (!stepsBySection[section]) {
+      stepsBySection[section] = [];
     }
-    stepsBySection[step.section].push(step);
+    stepsBySection[section].push(step);
   });
 
   // Calculate step numbers across all sections

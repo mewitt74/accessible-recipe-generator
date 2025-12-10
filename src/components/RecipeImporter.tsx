@@ -4,6 +4,7 @@ import { transformToStandardRecipe, expandedSearch } from "../services/recipeApi
 import { getFoodNameFromImage, expandSearchTerms } from "../services/imageRecognition";
 import { searchAllAdFreeSources, fetchRecipeFromSource, recipeSources } from "../services/recipeSources";
 import type { RecipeSource as RecipeSourceType } from "../services/recipeSources";
+import { searchBasicRecipes, getBasicRecipeTitles } from "../services/basicRecipes";
 
 interface Props {
   onImport: (recipe: Recipe) => void;
@@ -108,6 +109,16 @@ function RecipeImporter({ onImport }: Props) {
     setAdFreeResults([]);
 
     try {
+      // First, check basic recipes
+      const basicResults = searchBasicRecipes(searchQuery);
+      
+      if (basicResults.length > 0) {
+        // Found in basic recipes - use those first
+        setSearchResults(basicResults);
+        setLoading(false);
+        return;
+      }
+      
       // Get expanded search terms
       const expanded = expandSearchTerms(searchQuery);
       
@@ -118,7 +129,7 @@ function RecipeImporter({ onImport }: Props) {
       const adFreeSearchResults = await searchAllAdFreeSources(searchQuery);
       
       if (results.length === 0 && adFreeSearchResults.length === 0) {
-        setError(`No recipes found for "${searchQuery}". Try searching for: chicken, beef, fish, pasta, soup, or rice.`);
+        setError(`No recipes found for "${searchQuery}". Try searching for: egg, toast, tea, sandwich, pasta, chicken, or soup.`);
         return;
       }
       
@@ -152,12 +163,41 @@ function RecipeImporter({ onImport }: Props) {
     onImport(standardRecipe);
   };
 
+  const basicRecipeTitles = getBasicRecipeTitles();
+
+  const handleBasicRecipeClick = (title: string) => {
+    const recipes = searchBasicRecipes(title);
+    if (recipes.length > 0) {
+      onImport(recipes[0]);
+    }
+  };
+
   return (
     <div className="recipe-importer">
       <h2>Search for a Recipe</h2>
       <p className="importer-description">
-        Type to search OR take a photo of your meal package
+        ✨ Start with an easy recipe below, OR type to search for more options
       </p>
+      
+      {/* Basic Recipes - Quick Access */}
+      <div className="basic-recipes-quick-access">
+        <h3>🍳 Quick Start - Basic Recipes:</h3>
+        <div className="basic-recipe-buttons">
+          {basicRecipeTitles.map((title) => (
+            <button
+              key={title}
+              onClick={() => handleBasicRecipeClick(title)}
+              className="basic-recipe-btn"
+            >
+              {title}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="or-divider">
+        <span>OR</span>
+      </div>
       
       {/* Image Upload Section */}
       <div className="image-upload-section">
@@ -173,8 +213,13 @@ function RecipeImporter({ onImport }: Props) {
         />
         <label htmlFor="image-upload" className="image-upload-label">
           <span className="camera-icon">📷</span>
-          <span>{uploadedImage ? 'Change Photo' : 'Take Photo of Meal'}</span>
+          <span>{uploadedImage ? 'Change Photo' : 'Take Photo (Then Type What You See)'}</span>
         </label>
+        {!uploadedImage && (
+          <p style={{fontSize: '16px', color: '#666', marginTop: '8px'}}>
+            💡 Tip: Take a photo to help you remember, then type what's in it below
+          </p>
+        )}
         
         {uploadedImage && (
           <div className="uploaded-image-preview">

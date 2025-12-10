@@ -140,14 +140,18 @@ export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
         </div>
 
         {/* Step Icon */}
-        <div className="step-icon-large">
-          {getStepIcon(currentStep.section)}
-        </div>
+        {currentStep.section && (
+          <div className="step-icon-large">
+            {getStepIcon(currentStep.section)}
+          </div>
+        )}
 
         {/* Step Section Label */}
-        <div className="step-section">
-          {currentStep.section}
-        </div>
+        {currentStep.section && (
+          <div className="step-section">
+            {currentStep.section}
+          </div>
+        )}
 
         {/* Main Instruction - HUGE TEXT */}
         <div className="instruction-area">
