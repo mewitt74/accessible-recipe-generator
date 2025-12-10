@@ -845,12 +845,12 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 30px 25px;
-  min-height: 200px;
+  padding: 25px 20px;
+  min-height: 140px;
   background: #fffef5;
   border-radius: 12px;
   border: 4px solid #7fb539;
-  margin: 20px 0;
+  margin: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -869,7 +869,8 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 
 /* ============= VOICE BUTTON ============= */
 .btn-speak {
-  width: 100%;
+  width: calc(100% - 32px);
+  margin: 0 16px 16px 16px;
   padding: 20px !important;
   font-size: 28px !important;
   font-weight: bold !important;
@@ -904,9 +905,10 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 /* ============= PROGRESS TRACKER ============= */
 .progress-tracker {
   background: #f0f5ea;
-  padding: 20px;
+  padding: 16px;
   border-radius: 12px;
-  margin-bottom: 20px;
+  margin: 16px;
+  margin-bottom: 16px;
   border: 3px solid #7fb539;
 }
 
@@ -983,55 +985,59 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 .cognitive-accessible-recipe {
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  position: relative;
 }
 
 .cooking-step-screen {
-  padding: 20px;
+  padding: 0;
   padding-bottom: 40px;
-  max-width: 800px;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
+  overflow-x: hidden;
+}
+
+/* ============= STICKY NEXT BUTTON AT TOP ============= */
+.next-button-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #ffffff;
+  padding: 12px 16px 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-bottom: 3px solid #7fb539;
 }
 
 /* ============= PROMINENT NEXT BUTTON ============= */
 .btn-next-prominent {
   width: 100% !important;
-  padding: 32px !important;
-  font-size: 42px !important;
+  padding: 24px !important;
+  font-size: 36px !important;
   font-weight: 900 !important;
   background: linear-gradient(135deg, #7fb539 0%, #6fa030 100%) !important;
   color: #ffffff !important;
-  border: 4px solid #5a8024 !important;
-  border-radius: 16px !important;
+  border: none !important;
+  border-radius: 12px !important;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s;
   touch-action: manipulation;
-  margin: 20px 0 !important;
-  box-shadow: 0 8px 20px rgba(127, 181, 57, 0.4);
-  animation: nextButtonPulse 2s ease-in-out infinite;
+  margin: 0 !important;
+  box-shadow: 0 4px 12px rgba(127, 181, 57, 0.4);
   letter-spacing: 2px;
   text-transform: uppercase;
 }
 
 .btn-next-prominent:hover {
   background: linear-gradient(135deg, #6fa030 0%, #5a8024 100%) !important;
-  transform: scale(1.05);
-  box-shadow: 0 12px 30px rgba(127, 181, 57, 0.6);
+  box-shadow: 0 6px 16px rgba(127, 181, 57, 0.6);
 }
 
 .btn-next-prominent:active {
   transform: scale(0.98);
-}
-
-@keyframes nextButtonPulse {
-  0%, 100% { 
-    box-shadow: 0 8px 20px rgba(127, 181, 57, 0.4);
-  }
-  50% { 
-    box-shadow: 0 12px 35px rgba(127, 181, 57, 0.7);
-    transform: translateY(-2px);
-  }
+  box-shadow: 0 2px 8px rgba(127, 181, 57, 0.4);
 }
 
 /* ============= SECONDARY CONTROLS ============= */
@@ -1347,9 +1353,9 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
 
 /* Step Photos */
 .step-photo-container {
-  width: 100%;
-  max-height: 400px;
-  margin-bottom: 20px;
+  width: calc(100% - 32px);
+  max-height: 280px;
+  margin: 0 16px 16px 16px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1473,7 +1479,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   display: flex;
   gap: 10px;
   justify-content: center;
-  margin: 20px 0;
+  margin: 16px;
   flex-wrap: wrap;
 }
 
@@ -1549,7 +1555,7 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   font-size: 28px;
   font-weight: bold;
   color: #7fb539;
-  margin: 10px 0 15px 0;
+  margin: 10px 16px 15px 16px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -2058,24 +2064,45 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   
   /* Cooking mode - instruction text */
   .instruction-text {
-    font-size: 28px !important;
-    line-height: 1.5 !important;
+    font-size: 26px !important;
+    line-height: 1.4 !important;
   }
   
   .instruction-area {
-    padding: 20px;
-    min-height: 150px;
+    padding: 18px 15px;
+    min-height: 120px;
+    margin: 12px;
   }
   
   /* Next button on mobile */
   .btn-next-prominent {
-    font-size: 32px !important;
-    padding: 24px !important;
+    font-size: 28px !important;
+    padding: 20px !important;
+  }
+  
+  .next-button-sticky {
+    padding: 10px 12px;
   }
   
   .cooking-step-screen {
-    padding: 15px;
-    padding-bottom: 30px;
+    padding: 0;
+    padding-bottom: 24px;
+  }
+  
+  .step-photo-container {
+    max-height: 220px;
+    margin: 0 12px 12px 12px;
+    width: calc(100% - 24px);
+  }
+  
+  .progress-tracker {
+    margin: 12px;
+    padding: 12px;
+  }
+  
+  .step-section-label {
+    font-size: 22px;
+    margin: 8px 12px 12px 12px;
   }
   
   .ingredient-check-item,
@@ -2253,16 +2280,32 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
   
   .instruction-text {
-    font-size: 24px !important;
+    font-size: 22px !important;
   }
   
   .btn-next-prominent {
-    font-size: 28px !important;
-    padding: 20px !important;
+    font-size: 24px !important;
+    padding: 18px !important;
+  }
+  
+  .next-button-sticky {
+    padding: 8px 10px;
   }
   
   .instruction-area {
-    padding: 15px;
-    min-height: 120px;
+    padding: 12px;
+    min-height: 100px;
+    margin: 10px;
+  }
+  
+  .step-photo-container {
+    max-height: 180px;
+    margin: 0 10px 10px 10px;
+    width: calc(100% - 20px);
+  }
+  
+  .progress-tracker {
+    margin: 10px;
+    padding: 10px;
   }
 }

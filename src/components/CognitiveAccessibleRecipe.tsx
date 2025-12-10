@@ -164,6 +164,19 @@ export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
   return (
     <div className="cognitive-accessible-recipe">
       <div className="cooking-step-screen">
+        {/* NEXT Button - Always at Top */}
+        {!isLastStep && (
+          <div className="next-button-sticky">
+            <button
+              onClick={handleNextStep}
+              className="btn-huge btn-next-prominent"
+              aria-label="Next step"
+            >
+              NEXT STEP →
+            </button>
+          </div>
+        )}
+        
         {/* Progress Tracker */}
         <div className="progress-tracker">
           <div className="progress-bar-container">
@@ -228,17 +241,7 @@ export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
           {isSpeaking ? '🔊 Listening...' : '🔊 Hear This'}
         </button>
 
-        {/* Navigation Controls - NEXT button prominent */}
-        {!isLastStep && (
-          <button
-            onClick={handleNextStep}
-            className="btn-huge btn-next-prominent"
-            aria-label="Next step"
-          >
-            NEXT STEP →
-          </button>
-        )}
-        
+        {/* Secondary Controls */}
         <div className="step-controls-secondary">
           {!isFirstStep && (
             <button
