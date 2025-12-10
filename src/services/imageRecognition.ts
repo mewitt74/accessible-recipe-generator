@@ -3,128 +3,186 @@
  * Provides OCR and food identification from images
  */
 
-// Comprehensive food database with aliases and categories
+import { createWorker } from 'tesseract.js';
+
+// Comprehensive food database with brands, aliases and categories
 const FOOD_DATABASE = {
+  'mac and cheese': {
+    brands: ['kraft', 'velveeta', 'annie', 'stouffer'],
+    aliases: ['macaroni', 'mac n cheese', 'mac & cheese', 'mac n\' cheese', 'macaroni and cheese', 'cheese pasta'],
+    searchTerms: ['mac and cheese', 'macaroni and cheese', 'pasta'],
+    keywords: ['mac', 'macaroni', 'cheese', 'kraft', 'velveeta']
+  },
   chicken: {
-    aliases: ['poultry', 'fowl', 'bird', 'breast', 'thigh', 'drumstick', 'wing', 'nugget'],
-    searchTerms: ['chicken', 'poultry', 'chook'],
+    brands: ['tyson', 'perdue', 'foster farms'],
+    aliases: ['poultry', 'fowl', 'bird', 'breast', 'thigh', 'drumstick', 'wing', 'nugget', 'tender'],
+    searchTerms: ['chicken', 'poultry'],
     keywords: ['chicken', 'pollo', 'poulet']
   },
   beef: {
-    aliases: ['meat', 'steak', 'ground', 'roast', 'brisket', 'chuck', 'rib', 'sirloin'],
+    brands: ['angus', 'wagyu'],
+    aliases: ['meat', 'steak', 'ground', 'roast', 'brisket', 'chuck', 'rib', 'sirloin', 'hamburger'],
     searchTerms: ['beef', 'steak', 'meat', 'burger', 'patty'],
-    keywords: ['beef', 'carne', 'boeuf']
+    keywords: ['beef', 'carne', 'boeuf', 'steak']
   },
   pork: {
-    aliases: ['ham', 'bacon', 'chop', 'ribs', 'tenderloin', 'shoulder'],
-    searchTerms: ['pork', 'ham', 'bacon', 'pork chop'],
-    keywords: ['pork', 'cerdo', 'porc']
+    brands: ['hormel', 'oscar mayer', 'jimmy dean'],
+    aliases: ['ham', 'bacon', 'chop', 'ribs', 'tenderloin', 'shoulder', 'sausage'],
+    searchTerms: ['pork', 'ham', 'bacon', 'pork chop', 'sausage'],
+    keywords: ['pork', 'cerdo', 'porc', 'bacon', 'ham']
   },
   fish: {
-    aliases: ['seafood', 'salmon', 'tuna', 'cod', 'trout', 'tilapia', 'flounder', 'halibut'],
+    brands: ['gorton', 'captain d', 'mrs paul'],
+    aliases: ['seafood', 'salmon', 'tuna', 'cod', 'trout', 'tilapia', 'flounder', 'halibut', 'fish stick'],
     searchTerms: ['fish', 'salmon', 'tuna', 'cod', 'seafood'],
-    keywords: ['fish', 'pescado', 'poisson']
+    keywords: ['fish', 'pescado', 'poisson', 'salmon', 'tuna']
   },
   pasta: {
-    aliases: ['noodle', 'spaghetti', 'macaroni', 'penne', 'linguine', 'fettuccine', 'lasagna'],
-    searchTerms: ['pasta', 'noodle', 'spaghetti', 'macaroni', 'mac and cheese'],
-    keywords: ['pasta', 'noodles', 'mac']
+    brands: ['barilla', 'mueller', 'ronzoni', 'de cecco'],
+    aliases: ['noodle', 'spaghetti', 'macaroni', 'penne', 'linguine', 'fettuccine', 'lasagna', 'rotini'],
+    searchTerms: ['pasta', 'noodle', 'spaghetti', 'macaroni'],
+    keywords: ['pasta', 'noodles', 'spaghetti', 'macaroni']
   },
   rice: {
-    aliases: ['risotto', 'pilaf', 'fried rice', 'brown rice', 'white rice'],
+    brands: ['uncle ben', 'minute rice', 'riceland'],
+    aliases: ['risotto', 'pilaf', 'fried rice', 'brown rice', 'white rice', 'jasmine', 'basmati'],
     searchTerms: ['rice', 'risotto', 'pilaf', 'fried rice'],
     keywords: ['rice', 'arroz']
   },
   soup: {
-    aliases: ['broth', 'stew', 'bisque', 'chowder', 'consomme'],
+    brands: ['campbell', 'progresso', 'amy', 'pacific'],
+    aliases: ['broth', 'stew', 'bisque', 'chowder', 'consomme', 'ramen'],
     searchTerms: ['soup', 'broth', 'stew', 'chowder', 'bisque'],
-    keywords: ['soup', 'sopa']
+    keywords: ['soup', 'sopa', 'broth']
+  },
+  pizza: {
+    brands: ['digiorno', 'tombstone', 'red baron', 'tony'],
+    aliases: ['pie', 'flatbread', 'margherita', 'pepperoni'],
+    searchTerms: ['pizza', 'flatbread'],
+    keywords: ['pizza', 'pepperoni']
   },
   vegetables: {
-    aliases: ['broccoli', 'carrot', 'spinach', 'lettuce', 'tomato', 'potato', 'onion', 'garlic'],
+    brands: ['green giant', 'birds eye'],
+    aliases: ['broccoli', 'carrot', 'spinach', 'lettuce', 'tomato', 'potato', 'onion', 'garlic', 'peas', 'corn'],
     searchTerms: ['vegetables', 'veggies', 'salad', 'greens'],
-    keywords: ['vegetable', 'veggie', 'verduras']
+    keywords: ['vegetable', 'veggie', 'verduras', 'broccoli', 'carrot']
   },
   eggs: {
+    brands: ['eggland', 'land o lakes'],
     aliases: ['omelet', 'scrambled', 'fried', 'boiled', 'egg'],
     searchTerms: ['eggs', 'omelet', 'scrambled eggs'],
     keywords: ['egg', 'huevo', 'oeuf']
   },
   cheese: {
-    aliases: ['cheddar', 'mozzarella', 'parmesan', 'brie', 'gouda'],
-    searchTerms: ['cheese', 'cheddar', 'mac and cheese'],
-    keywords: ['cheese', 'queso', 'fromage']
+    brands: ['kraft', 'sargento', 'tillamook'],
+    aliases: ['cheddar', 'mozzarella', 'parmesan', 'brie', 'gouda', 'american', 'swiss'],
+    searchTerms: ['cheese', 'cheddar'],
+    keywords: ['cheese', 'queso', 'fromage', 'cheddar']
+  },
+  burrito: {
+    brands: ['el monterey', 'jose ole', 'evol'],
+    aliases: ['wrap', 'tortilla', 'burrito bowl'],
+    searchTerms: ['burrito', 'wrap', 'tortilla'],
+    keywords: ['burrito', 'wrap', 'mexican']
+  },
+  lasagna: {
+    brands: ['stouffer', 'marie callender'],
+    aliases: ['lasagne'],
+    searchTerms: ['lasagna', 'lasagne', 'pasta'],
+    keywords: ['lasagna', 'lasagne']
+  },
+  'mashed potatoes': {
+    brands: ['idahoan', 'betty crocker'],
+    aliases: ['potato', 'spud', 'mash'],
+    searchTerms: ['mashed potatoes', 'potato'],
+    keywords: ['potato', 'mashed', 'spud']
   }
 };
 
 /**
- * Extract text from an image using browser-based OCR (Tesseract.js)
- * This is a fallback that works client-side without API keys
+ * Extract text from an image using Tesseract.js OCR
+ * This performs OCR on food package photos to read brand names and product names
  */
 export async function extractTextFromImage(imageFile: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+  try {
+    console.log('Starting OCR on image...');
     
-    reader.onload = async (e) => {
-      try {
-        // Validate it's a real image
-        const img = new Image();
-        img.onload = () => {
-          // Image loaded successfully
-          resolve('');
-        };
-        img.onerror = () => {
-          reject(new Error('Invalid image file'));
-        };
-        img.src = e.target?.result as string;
-      } catch (error) {
-        reject(error);
-      }
-    };
+    // Create Tesseract worker
+    const worker = await createWorker('eng');
     
-    reader.onerror = () => {
-      reject(new Error('Failed to read image file'));
-    };
+    // Perform OCR
+    const { data } = await worker.recognize(imageFile);
     
-    reader.readAsDataURL(imageFile);
-  });
+    // Terminate worker to free resources
+    await worker.terminate();
+    
+    console.log('OCR completed. Extracted text:', data.text);
+    
+    return data.text || '';
+  } catch (error) {
+    console.error('OCR error:', error);
+    return '';
+  }
 }
 
 /**
- * Smart food identification with expanded matching
+ * Smart food identification with expanded matching including brand names
  */
 function matchFoodKeywords(text: string): string[] {
   const lowerText = text.toLowerCase();
   const matches: Set<string> = new Set();
+  const matchScores: Map<string, number> = new Map();
   
   // Check each food in database
   for (const [foodName, foodData] of Object.entries(FOOD_DATABASE)) {
-    // Check main search terms
+    let score = 0;
+    
+    // Check brand names (highest priority - 10 points)
+    if (foodData.brands) {
+      for (const brand of foodData.brands) {
+        if (lowerText.includes(brand)) {
+          score += 10;
+          break;
+        }
+      }
+    }
+    
+    // Check main search terms (5 points)
     for (const term of foodData.searchTerms) {
       if (lowerText.includes(term)) {
-        matches.add(foodName);
+        score += 5;
         break;
       }
     }
     
-    // Check aliases
+    // Check aliases (3 points)
     for (const alias of foodData.aliases) {
       if (lowerText.includes(alias)) {
-        matches.add(foodName);
+        score += 3;
         break;
       }
     }
     
-    // Check multilingual keywords
+    // Check multilingual keywords (2 points)
     for (const keyword of foodData.keywords) {
       if (lowerText.includes(keyword)) {
-        matches.add(foodName);
+        score += 2;
         break;
       }
+    }
+    
+    if (score > 0) {
+      matches.add(foodName);
+      matchScores.set(foodName, score);
     }
   }
   
-  return Array.from(matches);
+  // Sort by score (highest first)
+  return Array.from(matches).sort((a, b) => {
+    const scoreA = matchScores.get(a) || 0;
+    const scoreB = matchScores.get(b) || 0;
+    return scoreB - scoreA;
+  });
 }
 
 /**
@@ -156,7 +214,7 @@ export async function identifyFoodFromImageMetadata(imageFile: File): Promise<st
 }
 
 /**
- * Process an uploaded image and extract food names
+ * Process an uploaded image and extract food names using OCR
  */
 export async function getFoodNameFromImage(imageFile: File): Promise<{
   foodNames: string[];
@@ -164,17 +222,40 @@ export async function getFoodNameFromImage(imageFile: File): Promise<{
   needsManualInput: boolean;
 }> {
   try {
-    const matches = await identifyFoodFromImageMetadata(imageFile);
+    console.log('Processing image for food identification...');
     
-    if (matches.length > 0) {
+    // Always perform OCR on the image to read text from packages
+    const extractedText = await extractTextFromImage(imageFile);
+    
+    if (extractedText && extractedText.length > 10) {
+      console.log('Extracted text from image:', extractedText);
+      
+      // Match food keywords from extracted text
+      const matches = matchFoodKeywords(extractedText);
+      
+      if (matches.length > 0) {
+        console.log('Found food matches:', matches);
+        return {
+          foodNames: matches,
+          suggestions: matches.slice(0, 5),
+          needsManualInput: false
+        };
+      }
+    }
+    
+    // Try filename as fallback
+    const filenameMatches = await identifyFoodFromImageMetadata(imageFile);
+    
+    if (filenameMatches.length > 0) {
       return {
-        foodNames: matches,
-        suggestions: matches.slice(0, 3),
+        foodNames: filenameMatches,
+        suggestions: filenameMatches.slice(0, 3),
         needsManualInput: false
       };
     }
     
     // No automatic identification - need manual input
+    console.log('Could not identify food from image');
     return {
       foodNames: [],
       suggestions: [],

@@ -54,7 +54,8 @@ function RecipeImporter({ onImport }: Props) {
       };
       reader.readAsDataURL(file);
 
-      // Try to identify the food
+      // Try to identify the food using OCR
+      console.log('Reading text from food package photo...');
       const result = await getFoodNameFromImage(file);
 
       if (result.foodNames && result.foodNames.length > 0) {
@@ -67,6 +68,8 @@ function RecipeImporter({ onImport }: Props) {
         const primaryFood = result.foodNames[0];
         setSearchQuery(primaryFood);
         
+        console.log(`Found "${primaryFood}" from photo, searching for recipes...`);
+        
         // Perform search with expanded terms
         const expanded = expandSearchTerms(primaryFood);
         const allResults = await expandedSearch(primaryFood, expanded);
@@ -78,9 +81,10 @@ function RecipeImporter({ onImport }: Props) {
         }
       } else {
         // Couldn't identify - show manual input
+        console.log('Could not recognize food from photo, user needs to type manually');
         setShowManualInput(true);
         setImageProcessing(false);
-        setError('Could not identify the food from the photo. Please type what you see.');
+        setError('Could not read the food name from the photo. Please type what you see (like "Kraft Mac and Cheese").');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to process image');
@@ -390,7 +394,7 @@ function RecipeImporter({ onImport }: Props) {
         {imageProcessing && (
           <div className="processing-message">
             <span className="spinner">⏳</span>
-            Processing image...
+            Reading text from food package...
           </div>
         )}
       </div>
