@@ -356,13 +356,8 @@ function RecipeImporter({ onImport }: Props) {
         />
         <label htmlFor="image-upload" className="image-upload-label">
           <span className="camera-icon">📷</span>
-          <span>{uploadedImage ? 'Change Photo' : 'Take Photo (Then Type What You See)'}</span>
+          <span>{uploadedImage ? 'Change Photo' : 'Take Photo of Food Package'}</span>
         </label>
-        {!uploadedImage && (
-          <p style={{fontSize: '16px', color: '#666', marginTop: '8px'}}>
-            💡 Tip: Take a photo to help you remember, then type what's in it below
-          </p>
-        )}
         
         {uploadedImage && (
           <div className="uploaded-image-preview">
@@ -492,18 +487,10 @@ function RecipeImporter({ onImport }: Props) {
       <div className="search-tips">
         <h4>How to Use:</h4>
         <ul>
-          <li><strong>Take a Photo:</strong> Use your phone camera to take a picture of the meal package or box</li>
-          <li><strong>Or Type:</strong> Search by typing food names like "chicken", "pasta", "soup", "stew"</li>
-          <li><strong>Get Easy Instructions:</strong> All recipes are simplified for aphasia/TBI patients</li>
-          <li><strong>Ad-Free Options:</strong> Recipes from RecipesWithoutAds.com and Recipe-Free.com are automatically searched</li>
-          <li><strong>Print Cards:</strong> Instructions follow one-sentence-per-step format with large text</li>
-        </ul>
-        
-        <h4>About Ad-Free Recipe Sources:</h4>
-        <ul>
-          <li><strong>RecipesWithoutAds.com:</strong> Clean recipe site specifically designed without advertisements</li>
-          <li><strong>Recipe-Free.com:</strong> Simple, ad-free recipe collection focused on ease-of-use</li>
-          <li>All recipes are automatically simplified to match our accessibility standards</li>
+          <li><strong>1. Don't know what to make?</strong> Click "I Don't Know What to Make" to get a list of meal ideas</li>
+          <li><strong>2. Choose a category:</strong> Pick from Breakfast, Lunch, Dinner, Drinks, or Snacks</li>
+          <li><strong>3. Take a photo:</strong> Take a picture of the food box/package and we'll try to find recipes for it</li>
+          <li><strong>4. Type or speak:</strong> Search by typing or speaking the food name</li>
         </ul>
       </div>
     </div>
