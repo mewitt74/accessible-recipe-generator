@@ -8,6 +8,7 @@
  */
 
 import { Recipe, Ingredient, Step } from '../types';
+import { convertTemperatureText } from '../utils/temperatureConverter';
 
 export interface RecipeSource {
   name: string;
@@ -52,7 +53,9 @@ const recipesWithoutAdsSource: RecipeSource = {
       ) || [];
 
       const steps: Step[] = stepsMatches.map((match, idx) => {
-        const instruction = match.replace(/<[^>]+>/g, '').trim();
+        let instruction = match.replace(/<[^>]+>/g, '').trim();
+        // Convert Celsius to Fahrenheit
+        instruction = convertTemperatureText(instruction);
         return {
           section: idx === 0 ? 'Prep' : 'Cook Main',
           shortTitle: `Step ${idx + 1}`,
@@ -124,7 +127,9 @@ const recipeFreeSource: RecipeSource = {
       ) || [];
 
       const steps: Step[] = instructionMatches.map((match, idx) => {
-        const instruction = match.replace(/<[^>]+>/g, '').trim();
+        let instruction = match.replace(/<[^>]+>/g, '').trim();
+        // Convert Celsius to Fahrenheit
+        instruction = convertTemperatureText(instruction);
         const section = idx < 2 ? 'Prep' : 'Cook Main';
         return {
           section,

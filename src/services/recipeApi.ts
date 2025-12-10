@@ -1,4 +1,5 @@
 import { Recipe, Ingredient, Step } from '../types';
+import { convertTemperatureText } from '../utils/temperatureConverter';
 
 interface MealDBRecipe {
   idMeal: string;
@@ -189,6 +190,9 @@ function simplifyInstructions(text: string): Step[] {
       if (!text.match(/[.!?]$/)) {
         text += '.';
       }
+      
+      // Convert Celsius to Fahrenheit
+      text = convertTemperatureText(text);
 
       // Auto-categorize by keywords
       let section: Step['section'] = 'Prep';
