@@ -80,13 +80,6 @@ function App() {
           onBack={() => setMode("preview")}
         />
       )}
-
-      {mode === "cook-enhanced" && recipe && (
-        <EnhancedCognitiveRecipe
-          recipe={recipe}
-          onBack={() => setMode("preview")}
-        />
-      )}
     </div>
   );
 }
