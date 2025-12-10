@@ -4,6 +4,7 @@ import type { Recipe } from '../types';
 interface Props {
   recipe: Recipe;
   onBack: () => void;
+  onComplete?: () => void;
 }
 
 /**
@@ -15,7 +16,7 @@ interface Props {
  * - Visual step icons
  * - Minimal text, maximum clarity
  */
-export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
+export default function CognitiveAccessibleRecipe({ recipe, onBack, onComplete }: Props) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showIngredients, setShowIngredients] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -256,13 +257,17 @@ export default function CognitiveAccessibleRecipe({ recipe, onBack }: Props) {
           {isLastStep && (
             <button
               onClick={() => {
-                setShowIngredients(true);
-                setCurrentStepIndex(0);
+                if (onComplete) {
+                  onComplete();
+                } else {
+                  setShowIngredients(true);
+                  setCurrentStepIndex(0);
+                }
               }}
-              className="btn-step btn-next"
+              className="btn-step btn-done"
               aria-label="Done cooking"
             >
-              ✓ Done!
+              ✓ All Done!
             </button>
           )}
         </div>

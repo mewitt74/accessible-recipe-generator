@@ -7,6 +7,9 @@ import { getBasicRecipeStepPhoto, getBasicRecipeIngredientPhoto, getBasicRecipeE
 interface Props {
   recipe: Recipe;
   onBack: () => void;
+  onComplete?: () => void;
+  onToggleFavorite?: () => void;
+  isFavorite?: boolean;
 }
 
 interface SafetyTip {
@@ -25,7 +28,7 @@ interface SafetyTip {
  * - Simplified navigation (only NEXT/BACK)
  * - High contrast design for visual disabilities
  */
-export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
+export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, onToggleFavorite, isFavorite }: Props) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showIngredients, setShowIngredients] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -36,6 +39,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
   const [timerActive, setTimerActive] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [safetyTips, setSafetyTips] = useState<SafetyTip[]>([]);
+  const [showEmergency, setShowEmergency] = useState(false);
 
   const allSteps = recipe.steps || [];
   const currentStep = allSteps[currentStepIndex];
@@ -535,16 +539,64 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack }: Props) {
           {isLastStep && (
             <button
               onClick={() => {
-                setShowIngredients(true);
-                setCurrentStepIndex(0);
+                if (onComplete) {
+                  onComplete();
+                } else {
+                  setShowIngredients(true);
+                  setCurrentStepIndex(0);
+                }
               }}
-              className="btn-step btn-next"
+              className="btn-step btn-done"
               aria-label="Done cooking"
             >
-              ✓ Done!
+              ✓ All Done!
             </button>
           )}
         </div>
+
+        {/* Emergency/Safety Button */}
+        <div className="emergency-section">
+          <button 
+            onClick={() => setShowEmergency(!showEmergency)} 
+            className="btn-emergency"
+          >
+            🆘 Need Help?
+          </button>
+          
+          {showEmergency && (
+            <div className="emergency-panel">
+              <h3>🛑 Safety First!</h3>
+              <div className="emergency-actions">
+                <div className="emergency-tip">
+                  <span className="emergency-icon">🔥</span>
+                  <span>Turn OFF the stove/oven</span>
+                </div>
+                <div className="emergency-tip">
+                  <span className="emergency-icon">🚰</span>
+                  <span>Run cold water on burns</span>
+                </div>
+                <div className="emergency-tip">
+                  <span className="emergency-icon">🚪</span>
+                  <span>Leave if you smell gas</span>
+                </div>
+                <div className="emergency-tip">
+                  <span className="emergency-icon">📞</span>
+                  <span>Call 911 for emergencies</span>
+                </div>
+              </div>
+              <button onClick={() => setShowEmergency(false)} className="btn-secondary">
+                Close
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Favorite Button */}
+        {onToggleFavorite && (
+          <button onClick={onToggleFavorite} className={`btn-favorite-cooking ${isFavorite ? 'active' : ''}`}>
+            {isFavorite ? '❤️ Saved to My Recipes' : '🤍 Save This Recipe'}
+          </button>
+        )}
 
         {/* Tips section */}
         {recipe.tips && recipe.tips.length > 0 && (
