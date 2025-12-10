@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Recipe } from '../types';
 import { getCookingStepPhoto, type StepPhoto } from '../services/stepPhotos';
 import { getIngredientPhoto, getEquipmentPhoto, type IngredientPhoto, type EquipmentPhoto } from '../services/ingredientPhotos';
 import { getBasicRecipeStepPhoto, getBasicRecipeIngredientPhoto, getBasicRecipeEquipmentPhoto } from '../services/recipePhotos';
+import { parseVoiceCommand, executeVoiceCommand, createSpeechRecognition, isSpeechRecognitionSupported, speakFeedback, VOICE_COMMANDS_HELP } from '../services/voiceCommands';
+import { scaleRecipe, SCALE_OPTIONS } from '../services/recipeScaling';
+import { estimateNutrition, type NutritionEstimate } from '../services/nutritionService';
+import { startCookingSession, completeCookingSession, updateSessionProgress, rateSession } from '../services/cookingHistory';
+import { getShareOptions } from '../services/socialSharing';
 
 interface Props {
   recipe: Recipe;
@@ -27,6 +32,11 @@ interface SafetyTip {
  * - Audio timer with alerts
  * - Simplified navigation (only NEXT/BACK)
  * - High contrast design for visual disabilities
+ * - Voice commands for hands-free control
+ * - Recipe scaling for different serving sizes
+ * - Nutrition information display
+ * - Cooking history and progress tracking
+ * - Social sharing options
  */
 export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, onToggleFavorite, isFavorite }: Props) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -40,6 +50,21 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [safetyTips, setSafetyTips] = useState<SafetyTip[]>([]);
   const [showEmergency, setShowEmergency] = useState(false);
+  
+  // New state for features 6-10
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [scaleFactor, setScaleFactor] = useState(1);
+  const [scaledRecipe, setScaledRecipe] = useState(recipe);
+  const [showNutrition, setShowNutrition] = useState(false);
+  const [nutritionData, setNutritionData] = useState<NutritionEstimate | null>(null);
+  const [showShare, setShowShare] = useState(false);
+  const [showVoiceHelp, setShowVoiceHelp] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+  const [sessionRating, setSessionRating] = useState(0);
+  const [cookingStartTime] = useState(Date.now());
+  
+  const recognitionRef = useRef<any>(null);
 
   const allSteps = recipe.steps || [];
   const currentStep = allSteps[currentStepIndex];
@@ -220,6 +245,142 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
     setSafetyTips(tips);
   }, [currentStep]);
 
+  // Scale recipe when factor changes
+  useEffect(() => {
+    if (scaleFactor !== 1) {
+      setScaledRecipe(scaleRecipe(recipe, recipe.servings * scaleFactor));
+    } else {
+      setScaledRecipe(recipe);
+    }
+  }, [recipe, scaleFactor]);
+
+  // Calculate nutrition data
+  useEffect(() => {
+    const nutrition = estimateNutrition(scaledRecipe.ingredients, scaledRecipe.servings);
+    setNutritionData(nutrition);
+  }, [scaledRecipe]);
+
+  // Start cooking session on mount
+  useEffect(() => {
+    startCookingSession(recipe.title, allSteps.length, recipe.id);
+  }, [recipe.title, recipe.id, allSteps.length]);
+
+  // Update session progress when step changes
+  useEffect(() => {
+    updateSessionProgress(recipe.title, currentStepIndex + 1);
+  }, [recipe.title, currentStepIndex]);
+
+  // Voice recognition setup
+  const setupVoiceRecognition = useCallback(() => {
+    if (!isSpeechRecognitionSupported()) {
+      speakFeedback("Sorry, voice commands are not supported in your browser.");
+      return;
+    }
+
+    const recognition = createSpeechRecognition();
+    if (!recognition) return;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[event.results.length - 1][0].transcript;
+      const command = parseVoiceCommand(transcript);
+      
+      const executed = executeVoiceCommand(command, {
+        onNext: handleNextStep,
+        onPrevious: handlePreviousStep,
+        onRead: () => speakInstruction(currentStep?.instruction || ''),
+        onTimer: startTimer,
+        onStop: () => {
+          setTimerActive(false);
+          speakFeedback("Timer stopped");
+        },
+        onHelp: () => {
+          setShowEmergency(true);
+          speakFeedback("Showing safety help");
+        },
+        onDone: handleComplete,
+        onFavorite: () => {
+          if (onToggleFavorite) {
+            onToggleFavorite();
+            speakFeedback(isFavorite ? "Removed from favorites" : "Added to favorites");
+          }
+        },
+      });
+
+      if (executed) {
+        speakFeedback(`Got it: ${command.replace(/-/g, ' ')}`);
+      }
+    };
+
+    recognition.onend = () => {
+      // Restart if still enabled
+      if (voiceEnabled && recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (e) {
+          // Already started
+        }
+      }
+      setVoiceListening(false);
+    };
+
+    recognition.onerror = () => {
+      setVoiceListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  }, [currentStep, isFavorite, onToggleFavorite, voiceEnabled]);
+
+  // Toggle voice recognition
+  const toggleVoiceCommands = useCallback(() => {
+    if (voiceEnabled) {
+      // Disable
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+        recognitionRef.current = null;
+      }
+      setVoiceEnabled(false);
+      setVoiceListening(false);
+      speakFeedback("Voice commands off");
+    } else {
+      // Enable
+      setVoiceEnabled(true);
+      setupVoiceRecognition();
+      if (recognitionRef.current) {
+        recognitionRef.current.start();
+        setVoiceListening(true);
+        speakFeedback("Voice commands on. Say 'help' to see commands.");
+      }
+    }
+  }, [voiceEnabled, setupVoiceRecognition]);
+
+  // Cleanup voice recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Handle recipe completion with rating
+  const handleComplete = useCallback(() => {
+    const durationMinutes = Math.round((Date.now() - cookingStartTime) / 60000);
+    completeCookingSession(recipe.title, sessionRating || undefined, undefined, durationMinutes);
+    
+    if (onComplete) {
+      onComplete();
+    } else {
+      setShowIngredients(true);
+      setCurrentStepIndex(0);
+    }
+  }, [recipe.title, cookingStartTime, sessionRating, onComplete]);
+
+  // Handle rating selection
+  const handleRating = (rating: number) => {
+    setSessionRating(rating);
+    rateSession(recipe.title, rating);
+  };
+
   const speakInstruction = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -289,12 +450,67 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
     return (
       <div className="cognitive-accessible-recipe">
         <div className="ingredients-screen">
-          <h1 className="recipe-title">{recipe.title}</h1>
+          <h1 className="recipe-title">{scaledRecipe.title}</h1>
+
+          {/* Recipe Scaling Controls */}
+          <div className="scale-controls">
+            <span className="scale-label">Servings:</span>
+            <div className="scale-buttons">
+              {SCALE_OPTIONS.map(option => (
+                <button
+                  key={option.factor}
+                  onClick={() => setScaleFactor(option.factor)}
+                  className={`btn-scale ${scaleFactor === option.factor ? 'active' : ''}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <span className="servings-display">{scaledRecipe.servings} servings</span>
+          </div>
+
+          {/* Nutrition Toggle */}
+          <button 
+            onClick={() => setShowNutrition(!showNutrition)} 
+            className="btn-nutrition-toggle"
+          >
+            {showNutrition ? '📊 Hide Nutrition' : '📊 Show Nutrition'}
+          </button>
+
+          {/* Nutrition Panel */}
+          {showNutrition && nutritionData && (
+            <div className="nutrition-panel">
+              <h3>Nutrition Per Serving</h3>
+              <div className="nutrition-grid">
+                <div className="nutrition-item">
+                  <span className="nutrition-value">{nutritionData.perServing.calories}</span>
+                  <span className="nutrition-label">Calories</span>
+                </div>
+                <div className="nutrition-item">
+                  <span className="nutrition-value">{nutritionData.perServing.protein}g</span>
+                  <span className="nutrition-label">Protein</span>
+                </div>
+                <div className="nutrition-item">
+                  <span className="nutrition-value">{nutritionData.perServing.carbs}g</span>
+                  <span className="nutrition-label">Carbs</span>
+                </div>
+                <div className="nutrition-item">
+                  <span className="nutrition-value">{nutritionData.perServing.fat}g</span>
+                  <span className="nutrition-label">Fat</span>
+                </div>
+              </div>
+              {nutritionData.confidence !== 'high' && (
+                <p className="nutrition-disclaimer">
+                  ⚠️ Estimate only - {nutritionData.warnings.join(', ')}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="ingredients-section">
             <h2 className="section-title">📋 Get These Items:</h2>
             <div className="ingredients-checklist">
-              {recipe.ingredients.map((ing, i) => {
+              {scaledRecipe.ingredients.map((ing, i) => {
                 const photo = ingredientPhotos.get(i);
                 return (
                   <div key={i} className="ingredient-check-item">
@@ -382,6 +598,27 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
             </button>
           </div>
 
+          {/* Share Button */}
+          <div className="share-section">
+            <button onClick={() => setShowShare(!showShare)} className="btn-share">
+              📤 Share Recipe
+            </button>
+            
+            {showShare && (
+              <div className="share-options">
+                {getShareOptions().map(option => (
+                  <button
+                    key={option.id}
+                    onClick={() => option.action(recipe)}
+                    className="btn-share-option"
+                  >
+                    {option.icon} {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button onClick={onBack} className="btn-back">
             🔍 Start New Search
           </button>
@@ -407,6 +644,38 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
               aria-label="Next step"
             >
               NEXT STEP →
+            </button>
+          </div>
+        )}
+
+        {/* Voice Command Toggle */}
+        <div className="voice-control-bar">
+          <button
+            onClick={toggleVoiceCommands}
+            className={`btn-voice ${voiceEnabled ? 'active' : ''} ${voiceListening ? 'listening' : ''}`}
+          >
+            {voiceListening ? '🎤 Listening...' : voiceEnabled ? '🎤 Voice ON' : '🎤 Voice Commands'}
+          </button>
+          {voiceEnabled && (
+            <button onClick={() => setShowVoiceHelp(!showVoiceHelp)} className="btn-voice-help">
+              ❓
+            </button>
+          )}
+        </div>
+
+        {/* Voice Commands Help */}
+        {showVoiceHelp && (
+          <div className="voice-help-panel">
+            <h3>🎤 Voice Commands:</h3>
+            <ul className="voice-commands-list">
+              {VOICE_COMMANDS_HELP.map((cmd, i) => (
+                <li key={i}>
+                  <strong>{cmd.command}</strong> - {cmd.description}
+                </li>
+              ))}
+            </ul>
+            <button onClick={() => setShowVoiceHelp(false)} className="btn-secondary">
+              Close
             </button>
           </div>
         )}
@@ -536,16 +805,9 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
             </button>
           )}
 
-          {isLastStep && (
+          {isLastStep && !showRating && (
             <button
-              onClick={() => {
-                if (onComplete) {
-                  onComplete();
-                } else {
-                  setShowIngredients(true);
-                  setCurrentStepIndex(0);
-                }
-              }}
+              onClick={() => setShowRating(true)}
               className="btn-step btn-done"
               aria-label="Done cooking"
             >
@@ -553,6 +815,32 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
             </button>
           )}
         </div>
+
+        {/* Rating Panel (shown when done) */}
+        {showRating && (
+          <div className="rating-panel">
+            <h3>🎉 Great job! How did it go?</h3>
+            <div className="rating-stars">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => handleRating(star)}
+                  className={`star-btn ${sessionRating >= star ? 'active' : ''}`}
+                >
+                  {sessionRating >= star ? '⭐' : '☆'}
+                </button>
+              ))}
+            </div>
+            <p className="rating-label">
+              {sessionRating === 0 ? 'Tap a star to rate' :
+               sessionRating <= 2 ? "We'll make it better next time!" :
+               sessionRating <= 4 ? "Nice work!" : "Amazing! You're a star chef! 👨‍🍳"}
+            </p>
+            <button onClick={handleComplete} className="btn-primary btn-finish">
+              {sessionRating > 0 ? '✓ Save & Finish' : 'Skip & Finish'}
+            </button>
+          </div>
+        )}
 
         {/* Emergency/Safety Button */}
         <div className="emergency-section">
