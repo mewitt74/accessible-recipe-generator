@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { Recipe, Ingredient, Step } from '../types';
 
 interface Props {
@@ -7,7 +7,7 @@ interface Props {
 }
 
 const emptyIngredient = (): Ingredient => ({ amount: '', name: '', note: '' });
-const emptyStep = (): Step => ({ section: 'Main', shortTitle: '', instruction: '' });
+const emptyStep = (): Step => ({ section: 'Prep', shortTitle: '', instruction: '' });
 
 export default function RecipeForm({ initialRecipe, onSave }: Props) {
   const [title, setTitle] = useState(initialRecipe?.title ?? '');
@@ -16,9 +16,9 @@ export default function RecipeForm({ initialRecipe, onSave }: Props) {
   const [prepTimeMinutes, setPrepTimeMinutes] = useState<number>(initialRecipe?.prepTimeMinutes ?? 0);
   const [cookTimeMinutes, setCookTimeMinutes] = useState<number>(initialRecipe?.cookTimeMinutes ?? 0);
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialRecipe?.ingredients ?? [emptyIngredient()]);
-  const [equipment, setEquipment] = useState<string[]>(initialRecipe?.equipment ?? ['']);
+  const [equipment] = useState<string[]>(initialRecipe?.equipment ?? []);
   const [steps, setSteps] = useState<Step[]>(initialRecipe?.steps ?? [emptyStep()]);
-  const [tips, setTips] = useState<string[]>(initialRecipe?.tips ?? ['']);
+  const [tips] = useState<string[]>(initialRecipe?.tips ?? []);
 
   const updateIngredient = (index: number, patch: Partial<Ingredient>) => {
     setIngredients(prev => prev.map((ing, i) => i === index ? { ...ing, ...patch } : ing));
@@ -85,7 +85,7 @@ export default function RecipeForm({ initialRecipe, onSave }: Props) {
       </fieldset>
 
       <fieldset>
-        <legend>Steps</nlegend>
+        <legend>Steps</legend>
         {steps.map((s, i) => (
           <div key={i} className="form-row">
             <input aria-label={`shortTitle-${i}`} value={s.shortTitle} placeholder="Short Title" onChange={e => updateStep(i, { shortTitle: e.target.value })} />
