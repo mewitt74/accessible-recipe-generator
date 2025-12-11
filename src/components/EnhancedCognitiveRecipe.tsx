@@ -8,6 +8,7 @@ import { scaleRecipe, SCALE_OPTIONS } from '../services/recipeScaling';
 import { estimateNutrition, type NutritionEstimate } from '../services/nutritionService';
 import { startCookingSession, completeCookingSession, updateSessionProgress, rateSession } from '../services/cookingHistory';
 import { getShareOptions } from '../services/socialSharing';
+import { getIngredientIcon, getEquipmentIcon } from '../services/iconUtils';
 import { 
   simplifyInstruction, 
   getActionIcon, 
@@ -598,6 +599,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
             <div className="ingredients-checklist">
               {scaledRecipe.ingredients.map((ing, i) => {
                 const photo = ingredientPhotos.get(i);
+                const ingredientIcon = getIngredientIcon(ing.name);
                 return (
                   <div key={i} className="ingredient-check-item">
                     <input
@@ -625,6 +627,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
                         <span className="ingredient-check-amount">{ing.amount}</span>
                         <span className="ingredient-check-name">{ing.name}</span>
                       </div>
+                      <div className="ingredient-icon">{ingredientIcon.emoji}</div>
                     </label>
                   </div>
                 );
@@ -638,6 +641,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
               <div className="equipment-checklist">
                 {recipe.equipment.map((eq, i) => {
                   const photo = equipmentPhotos.get(i);
+                  const equipmentIcon = getEquipmentIcon(eq);
                   return (
                     <div key={i} className="equipment-check-item">
                       <input
@@ -664,6 +668,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
                         <div className="ingredient-text">
                           <span className="equipment-check-name">{eq}</span>
                         </div>
+                        <div className="ingredient-icon">{equipmentIcon.emoji}</div>
                       </label>
                     </div>
                   );
