@@ -1,13 +1,95 @@
 /**
  * Cooking Step Photo Service
  * Fetches relevant cooking photos for each recipe step
- * Uses Unsplash API and fallback to emoji + text descriptions
+ * Uses Unsplash API and fallback to line-art SVG icons + text descriptions
  */
+
+import { getIconSvg } from './iconLibrary';
 
 export interface StepPhoto {
   url: string | null;
   alt: string;
   source: 'unsplash' | 'fallback' | 'generated';
+}
+
+type StepActionPattern = {
+  regex: RegExp;
+  iconName: string;
+  fallbackEmoji: string;
+  description: string;
+};
+
+const STEP_ACTION_PATTERNS: StepActionPattern[] = [
+  {
+    regex: /(chop|cut|slice|dice)/i,
+    iconName: 'chop',
+    fallbackEmoji: '🔪',
+    description: 'Cut the ingredients into pieces',
+  },
+  {
+    regex: /(boil|simmer|heat)/i,
+    iconName: 'boil',
+    fallbackEmoji: '🫖',
+    description: 'Heat liquid until it bubbles',
+  },
+  {
+    regex: /(fry|sauté|saute|stir)/i,
+    iconName: 'fry',
+    fallbackEmoji: '🍳',
+    description: 'Cook in a hot pan with oil',
+  },
+  {
+    regex: /(bake|roast|oven)/i,
+    iconName: 'bake',
+    fallbackEmoji: '🔥',
+    description: 'Cook in the oven at high heat',
+  },
+  {
+    regex: /(mix|combine|whisk|beat)/i,
+    iconName: 'mix',
+    fallbackEmoji: '🥄',
+    description: 'Mix all ingredients together',
+  },
+  {
+    regex: /(season|salt|pepper|spice)/i,
+    iconName: 'season',
+    fallbackEmoji: '🧂',
+    description: 'Add salt, pepper, or spices',
+  },
+  {
+    regex: /(drain|strain|pour off)/i,
+    iconName: 'drain',
+    fallbackEmoji: '🫗',
+    description: 'Pour off extra liquid',
+  },
+  {
+    regex: /(serve|plate|arrange)/i,
+    iconName: 'serve',
+    fallbackEmoji: '🍽️',
+    description: 'Put food on plates to serve',
+  },
+  {
+    regex: /(cool|chill|rest)/i,
+    iconName: 'cool',
+    fallbackEmoji: '❄️',
+    description: 'Let the food cool down',
+  },
+];
+
+export function getStepActionDetails(instruction: string): { emoji: string; description: string; svg?: string } | null {
+  const lowerInstruction = instruction.toLowerCase();
+
+  for (const pattern of STEP_ACTION_PATTERNS) {
+    if (pattern.regex.test(lowerInstruction)) {
+      return { 
+        emoji: pattern.fallbackEmoji, 
+        description: pattern.description,
+        svg: getIconSvg(pattern.iconName),
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -126,30 +208,14 @@ export async function getCookingStepPhoto(
  * Create a fallback photo using emoji and text description
  */
 function createFallbackPhoto(instruction: string): StepPhoto {
-  const lowerInst = instruction.toLowerCase();
+  const action = getStepActionDetails(instruction);
 
-  // Map instructions to emoji and descriptions
-  const fallbacks: Record<string, { emoji: string; description: string }> = {
-    'chop|cut|slice|dice': { emoji: '🔪', description: 'Cut the ingredients into pieces' },
-    'boil|heat': { emoji: '🫖', description: 'Heat water or liquid to boiling' },
-    'fry|saute|stir': { emoji: '🍳', description: 'Cook in a hot pan with oil' },
-    'bake|roast|oven': { emoji: '🔥', description: 'Cook in the oven at high heat' },
-    'mix|combine': { emoji: '🥄', description: 'Mix all ingredients together' },
-    'season|salt|pepper': { emoji: '🧂', description: 'Add salt, pepper, and spices' },
-    'drain|strain': { emoji: '🫗', description: 'Pour off extra liquid' },
-    'serve|plate': { emoji: '🍽️', description: 'Put food on plates to serve' },
-    'cool|chill': { emoji: '❄️', description: 'Let cool or refrigerate' },
-  };
-
-  // Find matching fallback
-  for (const [pattern, data] of Object.entries(fallbacks)) {
-    if (new RegExp(pattern).test(lowerInst)) {
-      return {
-        url: null,
-        alt: `${data.emoji} ${data.description}`,
-        source: 'fallback'
-      };
-    }
+  if (action) {
+    return {
+      url: null,
+      alt: `${action.emoji} ${action.description}`,
+      source: 'fallback',
+    };
   }
 
   // Default fallback

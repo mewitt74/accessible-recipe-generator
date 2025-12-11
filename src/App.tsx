@@ -6,8 +6,19 @@ import RecipeCardFrontNew from "./components/RecipeCardFrontNew";
 import RecipeCardBackNew from "./components/RecipeCardBackNew";
 import CognitiveAccessibleRecipe from "./components/CognitiveAccessibleRecipe";
 import EnhancedCognitiveRecipe from "./components/EnhancedCognitiveRecipe";
+import Onboarding from "./components/Onboarding";
+import SettingsPanel from "./components/SettingsPanel";
+import MealPlanner from "./components/MealPlanner";
+import FeedbackModal from "./components/FeedbackModal";
+import KeyboardShortcutsHelp from "./components/KeyboardShortcutsHelp";
+import SubstitutionsPanel from "./components/SubstitutionsPanel";
 import { getFavoriteRecipes, saveToFavorites, removeFromFavorites, isFavorite, markAsCooked, type SavedRecipe } from "./services/favoriteRecipes";
 import { generateShoppingList, groupByCategory, type ShoppingItem } from "./services/shoppingList";
+import { initializeTheme, applyTheme, saveTheme, type ThemeMode } from "./services/themeService";
+import { hasCompletedOnboarding } from "./services/onboardingService";
+import { getSavedLanguage, saveLanguage, type SupportedLanguage } from "./services/languageService";
+import { printRecipe } from "./services/printService";
+import { initKeyboardShortcuts, cleanupKeyboardShortcuts, registerShortcutHandler, type ShortcutAction } from "./services/keyboardShortcuts";
 
 function App() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -15,6 +26,72 @@ function App() {
   const [favorites, setFavorites] = useState<SavedRecipe[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([]);
   const [isRecipeFavorite, setIsRecipeFavorite] = useState(false);
+  
+  // New state for features 11-15
+  const [theme, setTheme] = useState<ThemeMode>('light');
+  const [language, setLanguage] = useState<SupportedLanguage>('en');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // New state for features 16-20
+  const [showMealPlanner, setShowMealPlanner] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackMode, setFeedbackMode] = useState<'rating' | 'feedback'>('rating');
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSubstitutions, setShowSubstitutions] = useState(false);
+
+  // Initialize theme and check onboarding on mount
+  useEffect(() => {
+    const savedTheme = initializeTheme();
+    setTheme(savedTheme);
+    
+    const savedLang = getSavedLanguage();
+    setLanguage(savedLang);
+    
+    // Show onboarding for first-time users
+    if (!hasCompletedOnboarding()) {
+      setShowOnboarding(true);
+    }
+    
+    // Initialize keyboard shortcuts
+    initKeyboardShortcuts();
+    
+    return () => {
+      cleanupKeyboardShortcuts();
+    };
+  }, []);
+  
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const unsubscribe = registerShortcutHandler((action: ShortcutAction) => {
+      switch (action) {
+        case 'go-home':
+          setMode('import');
+          break;
+        case 'go-favorites':
+          setMode('favorites');
+          break;
+        case 'open-settings':
+          setShowSettings(true);
+          break;
+        case 'close-modal':
+          setShowSettings(false);
+          setShowMealPlanner(false);
+          setShowFeedback(false);
+          setShowShortcuts(false);
+          setShowSubstitutions(false);
+          break;
+        case 'toggle-theme':
+          handleThemeChange(theme === 'light' ? 'dark' : theme === 'dark' ? 'high-contrast' : 'light');
+          break;
+        case 'print':
+          if (recipe) printRecipe(recipe);
+          break;
+      }
+    });
+    
+    return unsubscribe;
+  }, [theme, recipe]);
 
   // Load favorites on mount
   useEffect(() => {
@@ -64,6 +141,33 @@ function App() {
     setMode("import");
   };
 
+  const handleThemeChange = (newTheme: ThemeMode) => {
+    setTheme(newTheme);
+    applyTheme(newTheme);
+    saveTheme(newTheme);
+  };
+
+  const handleLanguageChange = (newLang: SupportedLanguage) => {
+    setLanguage(newLang);
+    saveLanguage(newLang);
+  };
+
+  const handlePrint = () => {
+    if (recipe) {
+      printRecipe(recipe, { fontSize: 'large', highContrast: theme === 'high-contrast' });
+    }
+  };
+
+  const handleShowRating = () => {
+    setFeedbackMode('rating');
+    setShowFeedback(true);
+  };
+
+  const handleShowFeedback = () => {
+    setFeedbackMode('feedback');
+    setShowFeedback(true);
+  };
+
   const handleGenerateShoppingList = () => {
     if (recipe) {
       const items = generateShoppingList(recipe);
@@ -82,7 +186,52 @@ function App() {
 
   return (
     <div className="app">
-      {/* Favorites Button - Always visible except in cooking mode */}
+      {/* Onboarding for first-time users */}
+      {showOnboarding && (
+        <Onboarding onComplete={() => setShowOnboarding(false)} />
+      )}
+
+      {/* Settings Panel */}
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        language={language}
+        onLanguageChange={handleLanguageChange}
+        onShowOnboarding={() => setShowOnboarding(true)}
+      />
+
+      {/* Meal Planner */}
+      <MealPlanner
+        isOpen={showMealPlanner}
+        onClose={() => setShowMealPlanner(false)}
+        currentRecipe={recipe}
+      />
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+        recipeId={recipe?.title}
+        recipeName={recipe?.title}
+        mode={feedbackMode}
+      />
+
+      {/* Keyboard Shortcuts Help */}
+      <KeyboardShortcutsHelp
+        isOpen={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
+
+      {/* Substitutions Panel */}
+      <SubstitutionsPanel
+        isOpen={showSubstitutions}
+        onClose={() => setShowSubstitutions(false)}
+        ingredients={recipe?.ingredients}
+      />
+
+      {/* Top Bar - Always visible except in cooking mode */}
       {mode !== "cook" && mode !== "cook-enhanced" && (
         <div className="favorites-bar no-print">
           <button 
@@ -90,6 +239,18 @@ function App() {
             className={`btn-favorites ${mode === "favorites" ? "active" : ""}`}
           >
             ❤️ My Recipes ({favorites.length})
+          </button>
+          <button onClick={() => setShowMealPlanner(true)} className="btn-meal-planner" title="Meal Planner">
+            📅
+          </button>
+          <button onClick={() => setShowShortcuts(true)} className="btn-shortcuts" title="Keyboard Shortcuts">
+            ⌨️
+          </button>
+          <button onClick={handleShowFeedback} className="btn-feedback" title="Send Feedback">
+            💬
+          </button>
+          <button onClick={() => setShowSettings(true)} className="btn-settings">
+            ⚙️
           </button>
           {mode !== "import" && mode !== "edit" && (
             <button onClick={() => setMode("import")} className="btn-home">
@@ -205,6 +366,15 @@ function App() {
             <button onClick={handleGenerateShoppingList} className="btn-secondary">
               🛒 Shopping List
             </button>
+            <button onClick={() => setShowSubstitutions(true)} className="btn-secondary" title="Ingredient Substitutions">
+              🔄 Substitutes
+            </button>
+            <button onClick={handlePrint} className="btn-secondary" title="Print Recipe">
+              🖨️ Print
+            </button>
+            <button onClick={() => setShowMealPlanner(true)} className="btn-secondary" title="Add to Meal Plan">
+              📅 Plan
+            </button>
             <button onClick={() => setMode("cook-enhanced")} className="btn-primary" title="Cooking mode with step photos, timers, and safety tips">
               👉 Start Cooking
             </button>
@@ -228,7 +398,10 @@ function App() {
         <EnhancedCognitiveRecipe
           recipe={recipe}
           onBack={() => setMode("preview")}
-          onComplete={handleCookingComplete}
+          onComplete={() => {
+            handleCookingComplete();
+            handleShowRating();
+          }}
           onToggleFavorite={handleToggleFavorite}
           isFavorite={isRecipeFavorite}
         />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import InstructionPhotoImporter from './InstructionPhotoImporter';
 import type { Recipe, Ingredient, Step } from '../types';
 
 interface Props {
@@ -35,7 +36,7 @@ export default function RecipeForm({ initialRecipe, onSave }: Props) {
 
   const handleSave = () => {
     const r: Recipe = {
-      title: title || 'Untitled Recipe',
+      title: title.trim() || 'My Recipe',
       subtitle: subtitle || undefined,
       servings,
       prepTimeMinutes,
@@ -48,8 +49,25 @@ export default function RecipeForm({ initialRecipe, onSave }: Props) {
     onSave(r);
   };
 
+  const handlePhotoImport = (importedRecipe: Recipe) => {
+    setTitle(importedRecipe.title);
+    setSubtitle(importedRecipe.subtitle ?? '');
+    setServings(importedRecipe.servings);
+    setPrepTimeMinutes(importedRecipe.prepTimeMinutes);
+    setCookTimeMinutes(importedRecipe.cookTimeMinutes);
+    setIngredients(importedRecipe.ingredients);
+    setSteps(importedRecipe.steps);
+  };
+
   return (
-    <form onSubmit={e => { e.preventDefault(); handleSave(); }} className="recipe-form" aria-label="Recipe form">
+    <div>
+      {/* Photo Instructions Importer */}
+      <div className="recipe-form-photo-import">
+        <InstructionPhotoImporter onImport={handlePhotoImport} />
+      </div>
+
+      {/* Manual Form */}
+      <form onSubmit={e => { e.preventDefault(); handleSave(); }} className="recipe-form" aria-label="Recipe form">
       <div className="form-row">
         <label htmlFor="title">Title</label>
         <input id="title" value={title} onChange={e => setTitle(e.target.value)} />
@@ -102,5 +120,6 @@ export default function RecipeForm({ initialRecipe, onSave }: Props) {
         <button type="submit" className="btn-primary">Save Recipe</button>
       </div>
     </form>
+    </div>
   );
 }

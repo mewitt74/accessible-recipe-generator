@@ -45,9 +45,9 @@ export async function searchRecipes(query: string): Promise<MealDBRecipe[]> {
     if (ingredientResponse.ok) {
       const ingredientData = await ingredientResponse.json();
       if (ingredientData.meals && ingredientData.meals.length > 0) {
-        // Get full details for each meal
+        // Get full details for each meal (up to 50 results)
         const fullMeals = await Promise.all(
-          ingredientData.meals.slice(0, 10).map((meal: any) => 
+          ingredientData.meals.slice(0, 50).map((meal: any) => 
             getMealDetails(meal.idMeal)
           )
         );
@@ -129,7 +129,7 @@ export function transformToStandardRecipe(meal: MealDBRecipe): Recipe {
   const steps = simplifyInstructions(rawInstructions);
 
   return {
-    title: meal.strMeal || 'Untitled Recipe',
+    title: meal.strMeal?.trim() || meal.strCategory || 'Simple Recipe',
     subtitle: meal.strCategory,
     servings: 4, // Default, MealDB doesn't provide
     prepTimeMinutes: 15, // Default estimate

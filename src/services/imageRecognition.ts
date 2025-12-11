@@ -1,9 +1,83 @@
 /**
  * Image Recognition Service
  * Provides OCR and food identification from images
+ * Enhanced with recipe parsing for importing recipes from photos
  */
 
-import { createWorker } from 'tesseract.js';
+import { createWorker, type LoggerMessage, type Worker as TesseractWorker } from 'tesseract.js';
+import { parseRecipeFromText, parsedRecipeToRecipe, isLikelyRecipe, ParsedRecipe } from './recipeParser';
+import { Recipe } from '../types';
+
+const TESSERACT_LANG = 'eng';
+const TESSDATA_PATH = 'https://tessdata.projectnaptha.com/4.0.0_fast';
+const TESSERACT_CACHE_NAMESPACE = 'accessible-recipe-ocr';
+
+type OcrProgressUpdate = {
+  status: string;
+  progress: number;
+};
+
+type ProgressListener = (update: OcrProgressUpdate) => void;
+
+type ExtendedWorker = TesseractWorker & {
+  loadLanguage: (lang: string) => Promise<unknown>;
+  initialize: (lang: string) => Promise<unknown>;
+};
+
+let workerPromise: Promise<ExtendedWorker> | null = null;
+let activeProgressListener: ProgressListener | null = null;
+
+function notifyProgress(status: string, progress: number) {
+  if (activeProgressListener) {
+    activeProgressListener({ status, progress });
+  }
+}
+
+async function getOcrWorker(progressListener?: ProgressListener): Promise<ExtendedWorker> {
+  if (progressListener) {
+    activeProgressListener = progressListener;
+  }
+
+  if (!workerPromise) {
+    workerPromise = (async () => {
+      notifyProgress('Loading OCR engine', 0.05);
+
+      const worker = await createWorker(
+        undefined,
+        undefined,
+        {
+          cachePath: TESSERACT_CACHE_NAMESPACE,
+          langPath: TESSDATA_PATH,
+          logger: (message: LoggerMessage) => {
+            if (typeof message.progress === 'number') {
+              notifyProgress(message.status, message.progress);
+            }
+          },
+        },
+      ) as ExtendedWorker;
+
+      await worker.load();
+      notifyProgress('Loading language data', 0.2);
+
+      await worker.loadLanguage(TESSERACT_LANG);
+      notifyProgress('Initializing OCR', 0.35);
+
+      await worker.initialize(TESSERACT_LANG);
+      notifyProgress('OCR ready', 0.5);
+
+      return worker;
+    })().catch((error) => {
+      // Reset the promise so a future attempt can retry initialization
+      workerPromise = null;
+      throw error;
+    });
+  } else if (progressListener) {
+    // If the worker already exists, let the caller know we can start soon
+    notifyProgress('OCR ready', 0.5);
+  }
+
+  return workerPromise;
+}
 
 // Comprehensive food database with brands, aliases and categories
 const FOOD_DATABASE = {
@@ -103,25 +177,30 @@ const FOOD_DATABASE = {
  * Extract text from an image using Tesseract.js OCR
  * This performs OCR on food package photos to read brand names and product names
  */
-export async function extractTextFromImage(imageFile: File): Promise<string> {
+export async function extractTextFromImage(
+  imageFile: File,
+  onProgress?: (update: OcrProgressUpdate) => void,
+): Promise<string> {
+  activeProgressListener = onProgress ?? null;
+
   try {
     console.log('Starting OCR on image...');
-    
-    // Create Tesseract worker
-    const worker = await createWorker('eng');
-    
-    // Perform OCR
+
+    const worker = await getOcrWorker(onProgress ?? undefined);
+
+    notifyProgress('Reading image', 0.4);
     const { data } = await worker.recognize(imageFile);
-    
-    // Terminate worker to free resources
-    await worker.terminate();
-    
+
+    notifyProgress('Completed OCR', 1);
+
     console.log('OCR completed. Extracted text:', data.text);
-    
+
     return data.text || '';
   } catch (error) {
     console.error('OCR error:', error);
     return '';
+  } finally {
+    activeProgressListener = null;
   }
 }
 
@@ -308,3 +387,219 @@ export function expandSearchTerms(query: string): string[] {
   
   return Array.from(searchTerms);
 }
+
+/**
+ * Import a recipe from an image (cookbook page, printed recipe, etc.)
+ * Uses OCR to extract text, then parses it into a structured recipe
+ */
+interface ImportOptions {
+  onProgress?: (update: OcrProgressUpdate) => void;
+}
+
+export async function importRecipeFromImage(
+  imageFile: File,
+  options: ImportOptions = {},
+): Promise<{
+  success: boolean;
+  recipe?: Recipe;
+  parsedRecipe?: ParsedRecipe;
+  rawText?: string;
+  error?: string;
+  isRecipe: boolean;
+}> {
+  try {
+    console.log('Starting recipe import from image...');
+    
+    // Extract text from image using OCR
+    const rawText = await extractTextFromImage(imageFile, options.onProgress);
+    
+    if (!rawText || rawText.trim().length < 20) {
+      return {
+        success: false,
+        error: 'Could not extract readable text from the image. Try a clearer photo with good lighting.',
+        isRecipe: false,
+        rawText: rawText || '',
+      };
+    }
+    
+    console.log('Extracted text:', rawText.substring(0, 200) + '...');
+    
+    // Check if this looks like a recipe
+    const isRecipe = isLikelyRecipe(rawText);
+    
+    if (!isRecipe) {
+      // This might be a food package - try food identification instead
+      console.log('Text does not look like a recipe, may be a food package');
+      return {
+        success: false,
+        rawText,
+        isRecipe: false,
+        error: 'This doesn\'t appear to be a recipe. It might be a food package - try using "Search by Photo" instead.',
+      };
+    }
+    
+    // Parse the recipe text
+    const parsedRecipe = parseRecipeFromText(rawText);
+    
+    console.log('Parsed recipe:', {
+      title: parsedRecipe.title,
+      ingredients: parsedRecipe.ingredients.length,
+      instructions: parsedRecipe.instructions.length,
+      confidence: parsedRecipe.confidence,
+    });
+    
+    // Check if we got meaningful content
+    if (parsedRecipe.ingredients.length === 0 && parsedRecipe.instructions.length === 0) {
+      return {
+        success: false,
+        rawText,
+        parsedRecipe,
+        isRecipe: true,
+        error: 'Found a recipe but could not parse ingredients or instructions. You may need to edit it manually.',
+      };
+    }
+    
+    // Convert to standard Recipe format
+    const recipe = parsedRecipeToRecipe(parsedRecipe);
+    
+    return {
+      success: true,
+      recipe,
+      parsedRecipe,
+      rawText,
+      isRecipe: true,
+    };
+  } catch (error) {
+    console.error('Recipe import error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to import recipe from image',
+      isRecipe: false,
+    };
+  }
+}
+
+/**
+ * Extract cooking instructions from an image (box label, recipe card, etc.)
+ * Returns structured steps without needing full recipe parsing
+ */
+export async function extractInstructionsFromImage(
+  imageFile: File,
+  onProgress?: ProgressListener,
+): Promise<{
+  success: boolean;
+  instructions: string[];
+  rawText: string;
+  error?: string;
+}> {
+  try {
+    console.log('Extracting instructions from image...');
+    
+    // Extract raw text from image
+    const text = await extractTextFromImage(imageFile, onProgress);
+    
+    if (!text || text.trim().length < 20) {
+      return {
+        success: false,
+        instructions: [],
+        rawText: text || '',
+        error: 'Could not read text from the image. Try a clearer photo with good lighting.',
+      };
+    }
+
+    console.log('Extracted text:', text.substring(0, 200) + '...');
+
+    // Parse instructions from the text
+    const instructions = parseInstructionsFromText(text);
+
+    if (instructions.length === 0) {
+      return {
+        success: false,
+        instructions: [],
+        rawText: text,
+        error: 'Could not find cooking instructions in the text. Make sure the image shows step-by-step instructions.',
+      };
+    }
+
+    console.log('Found instructions:', {
+      count: instructions.length,
+      first: instructions[0].substring(0, 50),
+    });
+
+    return {
+      success: true,
+      instructions,
+      rawText: text,
+    };
+  } catch (error) {
+    console.error('Instruction extraction error:', error);
+    return {
+      success: false,
+      instructions: [],
+      rawText: '',
+      error: error instanceof Error ? error.message : 'Failed to extract instructions from image',
+    };
+  }
+}
+
+/**
+ * Parse cooking instruction steps from text
+ * Handles various formats (numbered, bulleted, paragraphs)
+ */
+function parseInstructionsFromText(text: string): string[] {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  const instructions: string[] = [];
+
+  // Keywords that indicate instructions section
+  const instructionKeywords = ['step', 'instruction', 'direction', 'procedure', 'heat', 'cook', 'bake', 'mix', 'add', 'combine'];
+  let inInstructionSection = false;
+
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+
+    // Check if entering instruction section
+    if (instructionKeywords.some(k => lowerLine.includes(k)) && line.length < 80) {
+      inInstructionSection = true;
+      continue;
+    }
+
+    // Skip header lines and very short lines
+    if (line.length < 10 || line.length > 300) continue;
+
+    // Extract instruction lines (numbered, bulleted, or plain text)
+    const isNumbered = /^\d+[\.\)]\s+/.test(line);
+    const isBulleted = /^[\-•●]\s+/.test(line);
+    const isCookingAction = /^(heat|cook|bake|mix|add|combine|stir|fry|boil|simmer|steam|preheat|melt|chop|slice|dice|pour|blend|whisk|fold|serve)/i.test(line);
+
+    if (isNumbered || isBulleted || isCookingAction || inInstructionSection) {
+      // Clean up the line
+      let instruction = line
+        .replace(/^\d+[\.\)]\s+/, '') // Remove leading numbers
+        .replace(/^[\-•●]\s+/, '')    // Remove bullets
+        .trim();
+
+      if (instruction.length > 10) {
+        instructions.push(instruction);
+      }
+    }
+  }
+
+  // If we found some instructions, return them
+  if (instructions.length > 0) {
+    return instructions;
+  }
+
+  // Fallback: treat each non-empty line as a potential instruction
+  const fallback = lines
+    .filter(line => line.length > 20 && line.length < 300)
+    .slice(0, 20); // Max 20 steps
+
+  return fallback;
+}
+
+/**
+ * Re-export parser types for convenience
+ */
+export type { ParsedRecipe };
+export type { OcrProgressUpdate };
+export { parseRecipeFromText, parsedRecipeToRecipe, isLikelyRecipe };

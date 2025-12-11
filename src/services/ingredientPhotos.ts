@@ -223,7 +223,7 @@ function createFallbackIngredientPhoto(ingredientName: string): IngredientPhoto 
 
   return {
     url: null,
-    alt: `${emoji} ${ingredientName}`,
+    alt: emoji,
     source: 'fallback'
   };
 }
@@ -304,7 +304,7 @@ function createFallbackEquipmentPhoto(equipmentName: string): EquipmentPhoto {
 
   return {
     url: null,
-    alt: `${emoji} ${equipmentName}`,
+    alt: emoji,
     source: 'fallback'
   };
 }

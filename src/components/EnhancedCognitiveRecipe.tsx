@@ -8,6 +8,18 @@ import { scaleRecipe, SCALE_OPTIONS } from '../services/recipeScaling';
 import { estimateNutrition, type NutritionEstimate } from '../services/nutritionService';
 import { startCookingSession, completeCookingSession, updateSessionProgress, rateSession } from '../services/cookingHistory';
 import { getShareOptions } from '../services/socialSharing';
+import { 
+  simplifyInstruction, 
+  getActionIcon, 
+  speakForAphasia, 
+  playAttentionSound,
+  startIdleReminders,
+  resetIdleTimer,
+  getIdleReminderMessage,
+  hasTimingComponent,
+  getEncouragementMessage,
+  breakIntoMicroSteps
+} from '../services/aphasiaSupport';
 
 interface Props {
   recipe: Recipe;
@@ -64,7 +76,16 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
   const [sessionRating, setSessionRating] = useState(0);
   const [cookingStartTime] = useState(Date.now());
   
+  // Aphasia support state
+  const [autoReadEnabled, setAutoReadEnabled] = useState(true);
+  const [showSimplified, setShowSimplified] = useState(true);
+  const [showMicroSteps, setShowMicroSteps] = useState(false);
+  const [idleReminderActive] = useState(true);
+  const [showIdleReminder, setShowIdleReminder] = useState(false);
+  const [encouragement, setEncouragement] = useState('');
+  
   const recognitionRef = useRef<any>(null);
+  const idleCleanupRef = useRef<(() => void) | null>(null);
 
   const allSteps = recipe.steps || [];
   const currentStep = allSteps[currentStepIndex];
@@ -270,6 +291,68 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
     updateSessionProgress(recipe.title, currentStepIndex + 1);
   }, [recipe.title, currentStepIndex]);
 
+  // Auto-read step when changing (aphasia support)
+  useEffect(() => {
+    if (!showIngredients && autoReadEnabled && currentStep) {
+      // Delay slightly to let UI update first
+      const timeout = setTimeout(() => {
+        const textToRead = showSimplified 
+          ? simplifyInstruction(currentStep.instruction)
+          : currentStep.instruction;
+        
+        speakForAphasia(`Step ${currentStepIndex + 1}. ${textToRead}`, {
+          onStart: () => setIsSpeaking(true),
+          onEnd: () => setIsSpeaking(false),
+        });
+      }, 500);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [currentStepIndex, showIngredients, autoReadEnabled, showSimplified, currentStep]);
+
+  // Idle reminder system (aphasia support)
+  useEffect(() => {
+    if (!showIngredients && idleReminderActive) {
+      idleCleanupRef.current = startIdleReminders(
+        // On idle (1 minute)
+        () => {
+          setShowIdleReminder(true);
+          if (currentStep) {
+            const message = getIdleReminderMessage(
+              currentStepIndex + 1,
+              allSteps.length,
+              currentStep.instruction
+            );
+            speakForAphasia(message);
+          }
+        },
+        // On urgent (3 minutes)
+        () => {
+          setShowIdleReminder(true);
+          speakForAphasia("Are you still cooking? Tap the screen if you need help.");
+        }
+      );
+      
+      return () => {
+        if (idleCleanupRef.current) {
+          idleCleanupRef.current();
+        }
+      };
+    }
+  }, [showIngredients, idleReminderActive, currentStep, currentStepIndex, allSteps.length]);
+
+  // Update encouragement message on step change
+  useEffect(() => {
+    const msg = getEncouragementMessage(currentStepIndex + 1, allSteps.length);
+    setEncouragement(msg);
+  }, [currentStepIndex, allSteps.length]);
+
+  // Reset idle timer on user activity
+  const handleUserActivity = useCallback(() => {
+    resetIdleTimer();
+    setShowIdleReminder(false);
+  }, []);
+
   // Voice recognition setup
   const setupVoiceRecognition = useCallback(() => {
     if (!isSpeechRecognitionSupported()) {
@@ -399,13 +482,16 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
   };
 
   const handleNextStep = () => {
+    handleUserActivity();
     if (!isLastStep) {
       const nextIndex = currentStepIndex + 1;
       setCurrentStepIndex(nextIndex);
+      playAttentionSound('gentle');
     }
   };
 
   const handlePreviousStep = () => {
+    handleUserActivity();
     if (!isFirstStep) {
       const prevIndex = currentStepIndex - 1;
       setCurrentStepIndex(prevIndex);
@@ -450,7 +536,7 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
     return (
       <div className="cognitive-accessible-recipe">
         <div className="ingredients-screen">
-          <h1 className="recipe-title">{scaledRecipe.title}</h1>
+          <h1 className="recipe-title">{scaledRecipe.title || recipe.title || 'My Recipe'}</h1>
 
           {/* Recipe Scaling Controls */}
           <div className="scale-controls">
@@ -633,8 +719,27 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
   const stepsRemaining = allSteps.length - currentStepIndex - 1;
 
   return (
-    <div className="cognitive-accessible-recipe">
+    <div className="cognitive-accessible-recipe" onClick={handleUserActivity}>
       <div className="cooking-step-screen">
+        {/* Idle Reminder Overlay */}
+        {showIdleReminder && (
+          <div className="idle-reminder-overlay" onClick={() => setShowIdleReminder(false)}>
+            <div className="idle-reminder-content">
+              <span className="idle-reminder-icon">👋</span>
+              <h3>Still cooking?</h3>
+              <p>Tap anywhere to continue</p>
+              <p className="idle-reminder-step">
+                You're on Step {currentStepIndex + 1}: {currentStep && simplifyInstruction(currentStep.instruction).substring(0, 50)}...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Encouragement Banner */}
+        <div className="encouragement-banner">
+          {encouragement}
+        </div>
+
         {/* NEXT Button - Always at Top */}
         {!isLastStep && (
           <div className="next-button-sticky">
@@ -647,6 +752,48 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
             </button>
           </div>
         )}
+
+        {/* Aphasia Support Controls */}
+        <div className="aphasia-controls">
+          <button
+            onClick={() => setAutoReadEnabled(!autoReadEnabled)}
+            className={`btn-aphasia ${autoReadEnabled ? 'active' : ''}`}
+            title="Auto-read steps aloud"
+          >
+            {autoReadEnabled ? '🔊 Auto-Read ON' : '🔇 Auto-Read OFF'}
+          </button>
+          <button
+            onClick={() => setShowSimplified(!showSimplified)}
+            className={`btn-aphasia ${showSimplified ? 'active' : ''}`}
+            title="Show simplified text"
+          >
+            {showSimplified ? '📖 Simple Text' : '📖 Original Text'}
+          </button>
+          <button
+            onClick={() => setShowMicroSteps(!showMicroSteps)}
+            className={`btn-aphasia ${showMicroSteps ? 'active' : ''}`}
+            title="Break into smaller steps"
+          >
+            {showMicroSteps ? '📋 Mini Steps' : '📋 Full Step'}
+          </button>
+          <button
+            onClick={() => {
+              if (currentStep) {
+                const text = showSimplified 
+                  ? simplifyInstruction(currentStep.instruction)
+                  : currentStep.instruction;
+                speakForAphasia(text, {
+                  onStart: () => setIsSpeaking(true),
+                  onEnd: () => setIsSpeaking(false),
+                });
+              }
+            }}
+            className={`btn-aphasia btn-read-aloud ${isSpeaking ? 'speaking' : ''}`}
+            disabled={isSpeaking}
+          >
+            {isSpeaking ? '🔊 Reading...' : '🔊 Read Aloud'}
+          </button>
+        </div>
 
         {/* Voice Command Toggle */}
         <div className="voice-control-bar">
@@ -754,12 +901,63 @@ export default function EnhancedCognitiveRecipe({ recipe, onBack, onComplete, on
         <div className="step-section-label">{currentStep.section}</div>
 
         <div className="instruction-area">
-          <h2 className="instruction-text">{currentStep.instruction}</h2>
+          {/* Action Icon */}
+          <div className="action-icon-large">
+            {getActionIcon(currentStep.instruction)}
+          </div>
+          
+          {/* Micro-steps mode */}
+          {showMicroSteps ? (
+            <div className="micro-steps">
+              {breakIntoMicroSteps(
+                showSimplified 
+                  ? simplifyInstruction(currentStep.instruction)
+                  : currentStep.instruction
+              ).map((microStep, i) => (
+                <div key={i} className="micro-step">
+                  <span className="micro-step-number">{i + 1}.</span>
+                  <span className="micro-step-text">{microStep}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* Normal instruction display */
+            <h2 className="instruction-text">
+              {showSimplified 
+                ? simplifyInstruction(currentStep.instruction)
+                : currentStep.instruction
+              }
+            </h2>
+          )}
+
+          {/* Auto-suggest timer if step has timing */}
+          {hasTimingComponent(currentStep.instruction).hasTime && !timerActive && (
+            <div className="timing-suggestion">
+              <span className="timing-icon">⏰</span>
+              <span>This step has a wait time. Use the timer below!</span>
+              {hasTimingComponent(currentStep.instruction).minutes && (
+                <button 
+                  onClick={() => startTimer(hasTimingComponent(currentStep.instruction).minutes!)}
+                  className="btn-auto-timer"
+                >
+                  Set {hasTimingComponent(currentStep.instruction).minutes} min timer
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Voice button */}
         <button
-          onClick={() => speakInstruction(currentStep.instruction)}
+          onClick={() => {
+            const text = showSimplified 
+              ? simplifyInstruction(currentStep.instruction)
+              : currentStep.instruction;
+            speakForAphasia(text, {
+              onStart: () => setIsSpeaking(true),
+              onEnd: () => setIsSpeaking(false),
+            });
+          }}
           className={`btn-huge btn-speak ${isSpeaking ? 'speaking' : ''}`}
           aria-label="Hear this step aloud"
         >
