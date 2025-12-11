@@ -19,6 +19,7 @@ import { hasCompletedOnboarding } from "./services/onboardingService";
 import { getSavedLanguage, saveLanguage, type SupportedLanguage } from "./services/languageService";
 import { printRecipe } from "./services/printService";
 import { initKeyboardShortcuts, cleanupKeyboardShortcuts, registerShortcutHandler, type ShortcutAction } from "./services/keyboardShortcuts";
+import { getIngredientIcon } from "./services/iconUtils";
 
 function App() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -304,6 +305,7 @@ function App() {
                 <h3 className="category-header">{category}</h3>
                 {items.map((item, idx) => {
                   const globalIndex = shoppingList.findIndex(i => i === item);
+                  const ingredientIcon = getIngredientIcon(item.name);
                   return (
                     <div 
                       key={idx} 
@@ -315,6 +317,9 @@ function App() {
                       </div>
                       <span className="shopping-amount">{item.amount}</span>
                       <span className="shopping-name">{item.name}</span>
+                      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', fontSize: '28px', opacity: 0.6 }}>
+                        {ingredientIcon.emoji}
+                      </div>
                     </div>
                   );
                 })}
